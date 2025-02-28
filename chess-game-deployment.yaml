@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chess-game-deployment
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chess-game
+  template:
+    metadata:
+      labels:
+        app: chess-game
+    spec:
+      containers:
+      - name: chess-game
+        image: chess-game:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8099
+          hostPort: 8099
+        env:
+          - name: REDIS_URL
+            value: "redis://redis-service:6379"
+          - name: SESSION_TIMEOUT
+            value: "10800"  # 3 óra másodpercben
+          - name: PORT
+            value: "8099"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chess-game-service
+spec:
+  type: ClusterIP
+  selector:
+    app: chess-game
+  ports:
+  - protocol: TCP
+    port: 8099
+    targetPort: 8099

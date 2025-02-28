@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Online Chess Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Online Chess Game</h1>
+  <div id="status"></div>
+  <div id="board"></div>
+  <div id="captured"></div>
+  <div class="controls">
+    <button id="new-session">Új session (Remote)</button>
+    <button id="new-game">Új játék (Lokális)</button>
+    <button id="undo">Visszavonás</button>
+    <button id="resign">Feladás</button>
+  </div>
+  <div id="timer"></div>
+  
+  <!-- Promóció popup modal -->
+  <div id="promotion-modal" class="modal">
+    <div class="modal-content">
+      <h2>Promóció</h2>
+      <p>Válassz bábut:</p>
+      <div class="promotion-options">
+        <img src="images/Q.png" alt="Queen" data-promotion="q">
+        <img src="images/R.png" alt="Rook" data-promotion="r">
+        <img src="images/B.png" alt="Bishop" data-promotion="b">
+        <img src="images/N.png" alt="Knight" data-promotion="n">
+      </div>
+      <button id="cancel-promotion">Mégse</button>
+    </div>
+  </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>

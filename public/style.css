@@ -1,0 +1,90 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+#board {
+  display: inline-block;
+  margin: 20px;
+  width: 480px;
+  height: 480px;
+  border: 2px solid #333;
+  position: relative;
+}
+
+.square {
+  width: 60px;
+  height: 60px;
+  float: left;
+  box-sizing: border-box;
+  border: 1px solid #999;
+  position: relative;
+}
+
+.white {
+  background-color: #f0d9b5;
+}
+
+.black {
+  background-color: #b58863;
+}
+
+.highlight {
+  outline: 3px solid yellow;
+}
+
+.square img.piece {
+  width: 100%;
+  height: 100%;
+}
+
+.controls {
+  margin: 20px;
+}
+
+#timer {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+/* Modal stílusok */
+.modal {
+  display: none; /* alapból rejtve */
+  position: fixed; 
+  z-index: 100; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 300px;
+}
+
+.promotion-options img {
+  width: 50px;
+  height: 50px;
+  margin: 5px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.promotion-options img:hover {
+  border-color: #333;
+}
+
+/* Fordított tábla: a board forog, de a bábuk visszafordulnak */
+.flipped {
+  transform: rotate(180deg);
+}
+
+.flipped .piece {
+  transform: rotate(180deg);
+}
