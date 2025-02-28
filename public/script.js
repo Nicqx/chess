@@ -11,8 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingMove = null; // olyan lépés, amely promóciót igényel
   let playerColor = 'white'; // alapértelmezett: ha lokálisan indul, fehér
   let isLocal = false; // true: lokális játék
+  let lastMove = null; // Utolsó lépés tárolása
 
-  // Remote mód: ha az URL-ben van session id
+  // Remote mód: ha az URL-ben szerepel egy session azonosító
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   if (pathParts.length === 1) {
     sessionId = pathParts[0];
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (storedColor) {
       playerColor = storedColor;
     } else {
+      // Ha nincs beállítva, a csatlakozó játékos kapja a fekete szerepet
       playerColor = 'black';
       localStorage.setItem(storageKey, 'black');
     }
@@ -69,6 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         currentFen = data.fen;
         loadGame(currentFen);
+        // Alkalmazzuk az utolsó lépés kijelölését, ha van
+        if (lastMove) {
+          highlightLastMove(lastMove);
+        }
         const turn = currentFen.split(' ')[1];
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
       })
@@ -83,6 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.fen !== currentFen) {
           currentFen = data.fen;
           loadGame(currentFen);
+          if (lastMove) {
+            highlightLastMove(lastMove);
+          }
         }
         const turn = currentFen.split(' ')[1];
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
@@ -133,10 +142,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // clearHighlights: törli a sárga "highlight" osztályt, de nem érinti a "last-move" osztályt
   function clearHighlights() {
-    board.forEach(row => row.forEach(square => square.classList.remove('highlight', 'last-move')));
+    board.forEach(row => row.forEach(square => square.classList.remove('highlight')));
   }
 
+  // Highlight legal moves (yellow)
   function highlightLegalMoves(fromSquare, moves) {
     moves.forEach(move => {
       const target = getSquareElementFromAlgebraic(move.to);
@@ -144,14 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Konvertálja a (row, col) értékeket algebrai jelöléssé (a-h, 1-8)
+  // Convert (row, col) to algebraic notation (a-h, 1-8)
   function getAlgebraic(row, col) {
     const files = 'abcdefgh';
     const rank = 8 - row;
     return files[col] + rank;
   }
 
-  // Négyzet keresése algebrai jelöléssel
+  // Get square element from algebraic notation
   function getSquareElementFromAlgebraic(algebraic) {
     const files = 'abcdefgh';
     const file = algebraic[0];
@@ -161,19 +172,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return board[row][col];
   }
 
-  // getPieceColor: a képfájl neve alapján határozza meg a bábu színét.
+  // getPieceColor: determines the piece color from the image filename.
   function getPieceColor(pieceElement) {
     const filename = pieceElement.src.split('/').pop();
     const letter = filename.charAt(0);
     return letter === letter.toUpperCase() ? 'white' : 'black';
   }
 
-  // Négyzet kattintás kezelése
+  // Highlight the last move (green outline)
+  function highlightLastMove(move) {
+    const fromSquare = getSquareElementFromAlgebraic(move.from);
+    const toSquare = getSquareElementFromAlgebraic(move.to);
+    if (fromSquare) fromSquare.classList.add('last-move');
+    if (toSquare) toSquare.classList.add('last-move');
+  }
+
+  // Square click handler
   function onSquareClick(row, col) {
     const clickedSquare = board[row][col];
     if (promotionModal.style.display === 'block') return;
 
-    // Lokális játéknál nem korlátozzuk a kör ellenőrzést
+    // Lokális játék esetén nem korlátozunk a kör ellenőrzésén, remote-nál igen.
     if (!isLocal && currentFen) {
       const turn = currentFen.split(' ')[1];
       if ((playerColor === 'white' && turn !== 'w') || (playerColor === 'black' && turn !== 'b')) {
@@ -266,8 +285,9 @@ document.addEventListener('DOMContentLoaded', () => {
           alert(data.error);
         } else {
           currentFen = data.fen;
+          lastMove = data.move; // Tároljuk el az utolsó lépést
           loadGame(currentFen);
-          highlightLastMove(data.move);
+          highlightLastMove(lastMove);
           const turn = currentFen.split(' ')[1];
           statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
         }
@@ -279,14 +299,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => {
         console.error("Error sending move:", err);
       });
-  }
-
-  // Highlight last move with green outline
-  function highlightLastMove(move) {
-    const fromSquare = getSquareElementFromAlgebraic(move.from);
-    const toSquare = getSquareElementFromAlgebraic(move.to);
-    if (fromSquare) fromSquare.classList.add('last-move');
-    if (toSquare) toSquare.classList.add('last-move');
   }
 
   function showPromotionModal() {
@@ -344,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(console.error);
   });
 
-  // Remote mode: "New game" resets current session while preserving colors
+  // Remote mode: "New game" button resets current session (preserving colors)
   document.getElementById('remote-newgame')?.addEventListener('click', () => {
     if (!sessionId) return;
     fetch(`${window.location.origin}/session/${sessionId}/newgame`, { method: 'POST' })
@@ -352,6 +364,9 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         currentFen = data.fen;
         loadGame(currentFen);
+        if (lastMove) {
+          highlightLastMove(lastMove);
+        }
         const turn = currentFen.split(' ')[1];
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
       })
@@ -360,3 +375,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   createBoard();
 });
+

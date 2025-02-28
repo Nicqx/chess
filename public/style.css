@@ -18,7 +18,7 @@ body {
   position: relative;
 }
 
-/* Mezők – alternáló színek */
+/* Mezők: alternáló színek */
 .square {
   width: 60px;
   height: 60px;
@@ -35,12 +35,12 @@ body {
   background-color: #b58863;
 }
 
-/* Remote játék esetén a flipped osztály: a boardot 180°-ban forgatjuk */
+/* Remote játék esetében a flipped osztály: forog a board */
 .flipped {
   transform: rotate(180deg);
 }
 
-/* Fontos: a flipped board esetében a bábukat visszaforgatjuk, hogy normál orientációban jelenjenek meg */
+/* A flipped board esetében a bábukat visszaforgatjuk */
 .flipped .piece {
   transform: rotate(180deg);
 }
