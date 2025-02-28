@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="hu">
 <head>
   <meta charset="UTF-8">
   <title>Online Chess Game</title>
@@ -7,17 +7,18 @@
 </head>
 <body>
   <h1>Online Chess Game</h1>
+  <div id="board-container">
+    <div id="board"></div>
+  </div>
   <div id="status"></div>
-  <div id="board"></div>
-  <div id="captured"></div>
   <div class="controls">
-    <button id="new-session">Új session (Remote)</button>
-    <button id="new-game">Új játék (Lokális)</button>
+    <button id="new-session">Új Remote Session</button>
+    <button id="new-game">Új Lokális Játék</button>
+    <button id="remote-newgame">Remote: Új Játék (Reset)</button>
     <button id="undo">Visszavonás</button>
     <button id="resign">Feladás</button>
   </div>
-  <div id="timer"></div>
-  
+  <div id="last-move-info"></div>
   <!-- Promóció popup modal -->
   <div id="promotion-modal" class="modal">
     <div class="modal-content">
@@ -32,7 +33,25 @@
       <button id="cancel-promotion">Mégse</button>
     </div>
   </div>
-  
+  <!-- Dokumentáció -->
+  <div id="documentation">
+    <h2>Játékinformáció</h2>
+    <p><strong>Új Remote Session:</strong> Létrehoz egy új remote játékot. A létrehozó játékos fehér, a meghívott automatikusan fekete.</p>
+    <p><strong>Új Lokális Játék:</strong> Egy gépen két játékos játszhat. A játék kezdetén a fehér lép, majd a fekete.</p>
+    <p><strong>Remote: Új Játék (Reset):</strong> Az aktuális remote sessionon belül újraindítja a játékot, megtartva a színeket.</p>
+    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása, mely esetén a kör megfordul.</p>
+    <p><strong>Feladás:</strong> Ha egy játékos feladja, a másik nyert, és a játék leáll.</p>
+    <h3>Sakk szabályok (részletes leírás magyarul)</h3>
+    <p>
+      A sakk egy kétszemélyes stratégiai játék, melyben a cél a király mattolása. Speciális lépések:
+    </p>
+    <ul>
+      <li>Sáncolás</li>
+      <li>En passant</li>
+      <li>Promóció</li>
+      <li>Patt és döntetlen szabályok</li>
+    </ul>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>

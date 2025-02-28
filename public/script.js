@@ -9,14 +9,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let board = []; // 2D tömb a négyzetek tárolásához
   let legalMoves = [];
   let pendingMove = null; // olyan lépés, amely promóciót igényel
-  let playerColor = 'white'; // alapértelmezett: lokális játék esetén fehér
-  let isLocal = false; // alapból remote mód
+  let playerColor = 'white'; // alapértelmezett: ha lokálisan indul, fehér
+  let isLocal = false; // true: lokális játék
 
-  // Ha az URL-ben szerepel egy session azonosító, akkor remote mód
+  // Remote mód: ha az URL-ben van session id
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   if (pathParts.length === 1) {
     sessionId = pathParts[0];
-    // Remote mód: a localStorage-ben tárolt színt vesszük, ha nincs, a csatlakozó játékos automatikusan feketével indul
     const storageKey = `chess_game_${sessionId}_color`;
     const storedColor = localStorage.getItem(storageKey);
     if (storedColor) {
@@ -25,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
       playerColor = 'black';
       localStorage.setItem(storageKey, 'black');
     }
-    // A remote mód esetében a board CSS-ben "flipped" osztályát alkalmazzuk
+    // Remote mód: alkalmazzuk a flipped osztályt, hogy a fekete játékos saját bábuit alul lássa
     if (playerColor === 'black') {
       boardElement.classList.add('flipped');
     } else {
@@ -35,9 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(pollGame, 3000);
   }
 
-  // Lokális játék: "Új játék" gombnál állítjuk be
-  // (Az ilyen esetben ugyanabban a böngészőben két játékos játszik, ezért nem korlátozunk a saját szín alapján.)
-  // Ekkor a session id ugyanúgy jön létre, de isLocal = true, és playerColor mindig fehérnek jelenik meg (display miatt).
+  // Lokális játék: "New game" gombnál
   document.getElementById('new-game').addEventListener('click', () => {
     fetch(`${window.location.origin}/new-session`, { method: 'POST' })
       .then(response => response.json())
@@ -46,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentFen = data.fen;
         isLocal = true;
         playerColor = 'white';
-        // Lokális játék esetén nem alkalmazzuk a flipped osztályt
+        localStorage.setItem(`chess_game_${sessionId}_color`, 'white');
         boardElement.classList.remove('flipped');
         loadGame(currentFen);
         statusElement.innerText = `Session: ${sessionId} (${playerColor})`;
@@ -54,12 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(console.error);
   });
 
-  // Remote "Új session" gomb
+  // Remote "New session" gomb
   document.getElementById('new-session').addEventListener('click', () => {
     fetch(`${window.location.origin}/new-session`, { method: 'POST' })
       .then(response => response.json())
       .then(data => {
-        // A session létrehozó mindig fehér; mentsük el ezt
         localStorage.setItem(`chess_game_${data.sessionId}_color`, 'white');
         window.location.href = `/${data.sessionId}`;
       })
@@ -138,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function clearHighlights() {
-    board.forEach(row => row.forEach(square => square.classList.remove('highlight')));
+    board.forEach(row => row.forEach(square => square.classList.remove('highlight', 'last-move')));
   }
 
   function highlightLegalMoves(fromSquare, moves) {
@@ -165,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return board[row][col];
   }
 
-  // A getPieceColor függvény meghatározza a bábu színét a kép neve alapján.
+  // getPieceColor: a képfájl neve alapján határozza meg a bábu színét.
   function getPieceColor(pieceElement) {
     const filename = pieceElement.src.split('/').pop();
     const letter = filename.charAt(0);
@@ -177,14 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const clickedSquare = board[row][col];
     if (promotionModal.style.display === 'block') return;
 
-    // Ha lokális játékmódban vagyunk, ne korlátozzuk a saját bábu alapján a kör ellenőrzést.
-    if (!isLocal) {
-      if (currentFen) {
-        const turn = currentFen.split(' ')[1]; // "w" vagy "b"
-        if ((playerColor === 'white' && turn !== 'w') || (playerColor === 'black' && turn !== 'b')) {
-          alert("Not your turn!");
-          return;
-        }
+    // Lokális játéknál nem korlátozzuk a kör ellenőrzést
+    if (!isLocal && currentFen) {
+      const turn = currentFen.split(' ')[1];
+      if ((playerColor === 'white' && turn !== 'w') || (playerColor === 'black' && turn !== 'b')) {
+        alert("Not your turn!");
+        return;
       }
     }
 
@@ -208,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       } else if (clickedSquare.querySelector('img.piece')) {
         const piece = clickedSquare.querySelector('img.piece');
-        if (getPieceColor(piece) !== (isLocal ? getPieceColor(piece) : playerColor)) {
+        if (!isLocal && getPieceColor(piece) !== playerColor) {
           alert("This is not your piece!");
           return;
         }
@@ -273,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           currentFen = data.fen;
           loadGame(currentFen);
+          highlightLastMove(data.move);
           const turn = currentFen.split(' ')[1];
           statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
         }
@@ -284,6 +279,14 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => {
         console.error("Error sending move:", err);
       });
+  }
+
+  // Highlight last move with green outline
+  function highlightLastMove(move) {
+    const fromSquare = getSquareElementFromAlgebraic(move.from);
+    const toSquare = getSquareElementFromAlgebraic(move.to);
+    if (fromSquare) fromSquare.classList.add('last-move');
+    if (toSquare) toSquare.classList.add('last-move');
   }
 
   function showPromotionModal() {
@@ -309,40 +312,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
   cancelPromotionBtn.addEventListener('click', hidePromotionModal);
 
-  // "New session" button (remote game)
-  document.getElementById('new-session').addEventListener('click', () => {
-    fetch(`${window.location.origin}/new-session`, { method: 'POST' })
-      .then(response => response.json())
-      .then(data => {
-        localStorage.setItem(`chess_game_${data.sessionId}_color`, 'white');
-        window.location.href = `/${data.sessionId}`;
-      })
-      .catch(console.error);
-  });
-
-  // "New game" button (local game)
-  document.getElementById('new-game').addEventListener('click', () => {
-    fetch(`${window.location.origin}/new-session`, { method: 'POST' })
-      .then(response => response.json())
-      .then(data => {
-        sessionId = data.sessionId;
-        currentFen = data.fen;
-        isLocal = true;
-        playerColor = 'white';
-        localStorage.setItem(`chess_game_${sessionId}_color`, 'white');
-        boardElement.classList.remove('flipped');
-        loadGame(currentFen);
-        statusElement.innerText = `Session: ${sessionId} (${playerColor})`;
-      })
-      .catch(console.error);
-  });
-
   document.getElementById('undo').addEventListener('click', () => {
-    alert('Undo not implemented yet.');
+    if (!sessionId) return;
+    fetch(`${window.location.origin}/session/${sessionId}/undo`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          alert(data.error);
+        } else {
+          currentFen = data.fen;
+          loadGame(currentFen);
+          statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ongoing`;
+        }
+      })
+      .catch(console.error);
   });
 
   document.getElementById('resign').addEventListener('click', () => {
-    alert('Resign not implemented yet.');
+    if (!sessionId) return;
+    const resignColor = playerColor === 'white' ? 'w' : 'b';
+    fetch(`${window.location.origin}/session/${sessionId}/resign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color: resignColor })
+    })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        statusElement.innerText = `Game ended: ${data.message}`;
+      })
+      .catch(console.error);
+  });
+
+  // Remote mode: "New game" resets current session while preserving colors
+  document.getElementById('remote-newgame')?.addEventListener('click', () => {
+    if (!sessionId) return;
+    fetch(`${window.location.origin}/session/${sessionId}/newgame`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        currentFen = data.fen;
+        loadGame(currentFen);
+        const turn = currentFen.split(' ')[1];
+        statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
+      })
+      .catch(console.error);
   });
 
   createBoard();
