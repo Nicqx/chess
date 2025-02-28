@@ -7,10 +7,52 @@
 </head>
 <body>
   <h1>Online Chess Game</h1>
-  <div id="board-container">
-    <div id="board"></div>
+  
+  <div id="board-wrapper">
+    <!-- Felső fájl címkék -->
+    <div id="file-labels-top" class="file-labels">
+      <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+    </div>
+    
+    <div id="board-and-ranks">
+      <!-- Bal oldali rang címkék -->
+      <div id="rank-labels-left" class="rank-labels">
+        <div>8</div>
+        <div>7</div>
+        <div>6</div>
+        <div>5</div>
+        <div>4</div>
+        <div>3</div>
+        <div>2</div>
+        <div>1</div>
+      </div>
+      
+      <!-- Tábla konténer -->
+      <div id="board-container">
+        <div id="board"></div>
+      </div>
+      
+      <!-- Jobb oldali rang címkék -->
+      <div id="rank-labels-right" class="rank-labels">
+        <div>8</div>
+        <div>7</div>
+        <div>6</div>
+        <div>5</div>
+        <div>4</div>
+        <div>3</div>
+        <div>2</div>
+        <div>1</div>
+      </div>
+    </div>
+    
+    <!-- Alsó fájl címkék -->
+    <div id="file-labels-bottom" class="file-labels">
+      <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+    </div>
   </div>
+  
   <div id="status"></div>
+  
   <div class="controls">
     <button id="new-session">Új Remote Session</button>
     <button id="new-game">Új Lokális Játék</button>
@@ -18,7 +60,9 @@
     <button id="undo">Visszavonás</button>
     <button id="resign">Feladás</button>
   </div>
+  
   <div id="last-move-info"></div>
+  
   <!-- Promóció popup modal -->
   <div id="promotion-modal" class="modal">
     <div class="modal-content">
@@ -33,30 +77,37 @@
       <button id="cancel-promotion">Mégse</button>
     </div>
   </div>
+  
   <!-- Dokumentáció -->
   <div id="documentation">
     <h2>Játékinformáció</h2>
-    <p><strong>Új Remote Session:</strong> Létrehoz egy új remote játékot. A létrehozó játékos fehér, a meghívott játékos automatikusan fekete.</p>
+    <p><strong>Új Remote Session:</strong> Létrehoz egy új remote játékot. A létrehozó játékos fehér, a meghívott automatikusan fekete.</p>
     <p><strong>Új Lokális Játék:</strong> Egy gépen két játékos játszhat. A játék kezdetén a fehér lép, majd a fekete.</p>
-    <p><strong>Remote: Új Játék (Reset):</strong> Az adott remote sessionon belül újraindítja a játékot, megtartva a színeket.</p>
-    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása, mely esetén a kör megfordul. (A backend tárolja a lépések történetét.)</p>
-    <p><strong>Feladás:</strong> Ha egy játékos feladja a játékot, a másik játékos nyert, és a játék leáll.</p>
-    <p><strong>Utolsó lépés kijelölése:</strong> A sikeres lépés után a forrás- és célmező zölddel jelenik meg, hogy látszódjon, mi volt az utolsó lépés.</p>
+    <p><strong>Remote: Új Játék (Reset):</strong> Az aktuális remote sessionon belül újraindítja a játékot, megtartva a színeket.</p>
+    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása, mely esetén a kör megfordul.</p>
+    <p><strong>Feladás:</strong> Ha egy játékos feladja, a másik nyert, és a játék leáll.</p>
+    <p><strong>Utolsó lépés kijelölése:</strong> A sikeres lépés után az indulási és célmező zöld árnyalattal jelenik meg.</p>
     <h3>Sakk szabályok (részletes leírás magyarul)</h3>
     <p>
-      A sakk egy kétszemélyes stratégiai játék, melyben a fehér és a fekete játékos felváltva lépnek. A játék célja a király mattolása, vagyis annak elhelyezése olyan helyzetbe, hogy ne tudjon menekülni az ütések elől. A sakk szabályai tartalmazzák:
+      A sakk egy kétszemélyes stratégiai játék, melyben a fehér és a fekete játékos felváltva lépnek. A cél a király mattolása, azaz annak elhelyezése olyan pozícióba, hogy ne tudjon menekülni az ellenfél ütései elől.
     </p>
     <ul>
-      <li><strong>Sáncolás:</strong> A király és egy torony egyszerre léphet, ha egyik sem mozdult még, és az útjuk üres.</li>
-      <li><strong>En passant:</strong> Egy gyalog speciális ütése, ha az ellenfél gyalogja két mezőt lép, és mellette áll.</li>
+      <li><strong>Sáncolás:</strong> A király és egy torony egyszerre léphet, ha egyik sem mozdult még, és az útjuk szabad.</li>
+      <li><strong>En passant:</strong> Egy gyalog speciális ütése, ha az ellenfél gyalogja két mezőt lép előre, és mellette áll.</li>
       <li><strong>Promóció:</strong> Amikor egy gyalog eléri az ellenfél alapvonalát, a játékos bármilyen más bábut választhat (általában királynőt).</li>
-      <li><strong>Patt:</strong> Ha az ellenfél nem tud érvényes lépést végrehajtani, és nincs sak, döntetlen a játék.</li>
+      <li><strong>Patt:</strong> Ha az ellenfél nem tud érvényes lépést végrehajtani, és nincs sakk, döntetlen a játék.</li>
       <li><strong>Döntetlen szabályok:</strong> Pl. háromszoros pozícióismétlés, ötven lépés szabály stb.</li>
     </ul>
     <p>
-      Ezek mellett a sakk számos finom szabályt tartalmaz, amelyek biztosítják a játék mélységét és stratégiáját. Az itt szereplő dokumentáció részletesen leírja a gombok funkcióit és a speciális helyzeteket, így még a kezdők is könnyedén megérthetik a játék menetét.
+      A gombok funkciói:
+      <br><strong>Új Remote Session:</strong> Létrehoz egy új remote játékot; a létrehozó fehér, a csatlakozó automatikusan fekete.
+      <br><strong>Új Lokális Játék:</strong> Lokális játék indítása ugyanabban a böngészőben.
+      <br><strong>Remote: Új Játék (Reset):</strong> Az aktuális remote session újrakezdése.
+      <br><strong>Visszavonás:</strong> Az utolsó lépés visszavonása.
+      <br><strong>Feladás:</strong> Ha egy játékos feladja, a másik nyert.
     </p>
   </div>
+  
   <script src="script.js"></script>
 </body>
 </html>

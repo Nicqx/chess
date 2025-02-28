@@ -5,20 +5,73 @@ body {
   padding: 0;
 }
 
-#board-container {
+/* Board-wrapper és koordináta címkék */
+#board-wrapper {
+  position: relative;
   display: inline-block;
   margin: 20px;
 }
 
+/* Felső és alsó fájl címkék */
+.file-labels {
+  display: flex;
+  width: 480px; /* Egyezik a board szélességével */
+  font-weight: bold;
+}
+.file-labels span {
+  flex: 1;
+  text-align: center;
+}
+#file-labels-top {
+  position: absolute;
+  top: -25px; /* Finomhangolható */
+  left: 0;
+}
+#file-labels-bottom {
+  position: absolute;
+  bottom: -25px; /* Finomhangolható */
+  left: 0;
+}
+
+/* Bal és jobb oldali rang címkék */
+.rank-labels {
+  display: flex;
+  flex-direction: column;
+  width: 20px;
+  font-weight: bold;
+  justify-content: space-around;
+  height: 480px; /* Egyezik a board magasságával */
+}
+.rank-labels div {
+  text-align: center;
+}
+#rank-labels-left {
+  position: absolute;
+  left: -25px; /* Finomhangolható */
+  top: 0;
+}
+#rank-labels-right {
+  position: absolute;
+  right: -25px; /* Finomhangolható */
+  top: 0;
+}
+
+/* Board-and-ranks konténer */
+#board-and-ranks {
+  position: relative;
+}
+
+/* Board konténer és board */
+#board-container {
+  display: inline-block;
+}
 #board {
   width: 480px;
   height: 480px;
   border: 2px solid #333;
-  margin: 0 auto;
-  position: relative;
 }
 
-/* Mezők: alternáló színek */
+/* Mezők (alternáló színek) */
 .square {
   width: 60px;
   height: 60px;
@@ -26,42 +79,37 @@ body {
   box-sizing: border-box;
   border: 1px solid #999;
 }
-
 .white {
   background-color: #f0d9b5;
 }
-
 .black {
   background-color: #b58863;
 }
 
-/* Remote játék esetében a flipped osztály: forog a board */
+/* Flipped board (remote játék) */
 .flipped {
   transform: rotate(180deg);
 }
-
-/* A flipped board esetében a bábukat visszaforgatjuk */
 .flipped .piece {
   transform: rotate(180deg);
 }
 
+/* Jelölések */
 .highlight {
   outline: 3px solid yellow;
 }
-
 .last-move {
   background-color: rgba(0, 255, 0, 0.3) !important;
 }
 
+/* Egyéb stílusok */
 .controls {
   margin: 20px;
 }
-
 #status {
   margin: 10px;
   font-weight: bold;
 }
-
 .modal {
   display: none;
   position: fixed;
@@ -73,7 +121,6 @@ body {
   overflow: auto;
   background-color: rgba(0,0,0,0.4);
 }
-
 .modal-content {
   background-color: #fefefe;
   margin: 15% auto;
@@ -81,7 +128,6 @@ body {
   border: 1px solid #888;
   width: 300px;
 }
-
 .promotion-options img {
   width: 50px;
   height: 50px;
@@ -89,11 +135,9 @@ body {
   cursor: pointer;
   border: 2px solid transparent;
 }
-
 .promotion-options img:hover {
   border-color: #333;
 }
-
 #documentation {
   margin: 20px;
   text-align: left;
