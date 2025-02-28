@@ -9,29 +9,46 @@ document.addEventListener('DOMContentLoaded', () => {
   let board = []; // 2D tömb a négyzetek tárolásához
   let legalMoves = [];
   let pendingMove = null; // olyan lépés, amely promóciót igényel
-  let playerColor = 'white'; // alapértelmezett: ha lokálisan indul, fehér
+  let playerColor = 'white'; // alapértelmezett: lokális játék esetén fehér
   let isLocal = false; // true: lokális játék
   let lastMove = null; // utolsó lépés tárolása
-  let gameEndedShown = false; // biztosítja, hogy a végjáték popup egyszer jelenjen meg
+  let gameEndedShown = false; // biztosítja, hogy a végállapot popup egyszer jelenjen meg
 
-  // updateStatus: a backendből kapott data.status (vagy az "ended"/"winner" mezők) alapján jelenítjük meg a státuszt
+  // updateStatus: Ha a backend a végállapotot jelzi, akkor:
+  // - checkmate, stalemate, draw esetén popup alert és "Game ended: ..." üzenet,
+  // - check esetén csak "Check!" jelenik meg.
   function updateStatus(data) {
     if (data.status && data.status !== 'ongoing') {
-      // Használjuk a data.status értéket
-      let winText = "";
+      let statusText = "";
       if (data.status === 'checkmate') {
-        winText = "Checkmate";
+        const currentTurn = currentFen.split(' ')[1];
+        statusText = currentTurn === 'w' ? 'Black wins by checkmate' : 'White wins by checkmate';
+        if (!gameEndedShown) {
+          alert(`Game ended: ${statusText}`);
+          gameEndedShown = true;
+        }
+        statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'stalemate') {
-        winText = "Draw (stalemate)";
+        statusText = "Draw (stalemate)";
+        if (!gameEndedShown) {
+          alert(`Game ended: ${statusText}`);
+          gameEndedShown = true;
+        }
+        statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'draw') {
-        winText = "Draw";
+        statusText = "Draw";
+        if (!gameEndedShown) {
+          alert(`Game ended: ${statusText}`);
+          gameEndedShown = true;
+        }
+        statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
+      } else if (data.status === 'check') {
+        // Sakk esetén csak a státusz frissül, nincs popup.
+        statusText = "Check!";
+        statusElement.innerText = `Session: ${sessionId} (${playerColor}) | ${statusText}`;
       } else {
-        winText = data.status;
-      }
-      statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${winText}`;
-      if (!gameEndedShown) {
-        alert(`Game ended: ${winText}`);
-        gameEndedShown = true;
+        statusText = data.status;
+        statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       }
     } else {
       const turn = currentFen.split(' ')[1];
@@ -51,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
       playerColor = 'black';
       localStorage.setItem(storageKey, 'black');
     }
-    // Remote mód: alkalmazzuk a flipped osztályt, hogy a fekete játékos saját bábuit alul lássa
+    // Remote mód: a "flipped" osztály gondoskodik arról, hogy a fekete játékos saját bábuit alul lássa
     if (playerColor === 'black') {
       boardElement.classList.add('flipped');
     } else {
@@ -202,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return letter === letter.toUpperCase() ? 'white' : 'black';
   }
 
-  // Highlight the last move (green outline)
+  // Highlight the last move: módosítjuk úgy, hogy a mezők háttérszínét állítjuk zöld árnyalatra
   function highlightLastMove(move) {
     const fromSquare = getSquareElementFromAlgebraic(move.from);
     const toSquare = getSquareElementFromAlgebraic(move.to);
@@ -215,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clickedSquare = board[row][col];
     if (promotionModal.style.display === 'block') return;
 
-    // Lokális játéknál nem korlátozunk a kör ellenőrzésén, remote-nál igen.
+    // Lokális játéknál nem korlátozunk, remote-nál ellenőrizzük a köröket.
     if (!isLocal && currentFen) {
       const turn = currentFen.split(' ')[1];
       if ((playerColor === 'white' && turn !== 'w') || (playerColor === 'black' && turn !== 'b')) {
@@ -311,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
           lastMove = data.move; // Utolsó lépés elmentése
           loadGame(currentFen);
           highlightLastMove(lastMove);
-          // Ha a backend nem "ongoing", akkor frissítjük a státuszt és popup alert
+          // Ha a move response status nem "ongoing", akkor popup
           if (data.status && data.status !== 'ongoing') {
             updateStatus({ status: data.status });
           } else {

@@ -118,6 +118,7 @@ app.post('/session/:id/move', async (req, res) => {
   if (game.in_checkmate()) status = 'checkmate';
   else if (game.in_stalemate()) status = 'stalemate';
   else if (game.in_draw()) status = 'draw';
+  else if (game.in_check()) status = 'check'; // <-- Ezt add hozzá!
   console.log("New FEN:", newFen);
   res.json({ move, fen: newFen, status });
 });

@@ -50,7 +50,7 @@ body {
 }
 
 .last-move {
-  outline: 3px solid green;
+  background-color: rgba(0, 255, 0, 0.3) !important;
 }
 
 .controls {
