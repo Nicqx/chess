@@ -11,9 +11,35 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingMove = null; // olyan lépés, amely promóciót igényel
   let playerColor = 'white'; // alapértelmezett: ha lokálisan indul, fehér
   let isLocal = false; // true: lokális játék
-  let lastMove = null; // Utolsó lépés tárolása
+  let lastMove = null; // utolsó lépés tárolása
+  let gameEndedShown = false; // biztosítja, hogy a végjáték popup egyszer jelenjen meg
 
-  // Remote mód: ha az URL-ben szerepel egy session azonosító
+  // updateStatus: a backendből kapott data.status (vagy az "ended"/"winner" mezők) alapján jelenítjük meg a státuszt
+  function updateStatus(data) {
+    if (data.status && data.status !== 'ongoing') {
+      // Használjuk a data.status értéket
+      let winText = "";
+      if (data.status === 'checkmate') {
+        winText = "Checkmate";
+      } else if (data.status === 'stalemate') {
+        winText = "Draw (stalemate)";
+      } else if (data.status === 'draw') {
+        winText = "Draw";
+      } else {
+        winText = data.status;
+      }
+      statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${winText}`;
+      if (!gameEndedShown) {
+        alert(`Game ended: ${winText}`);
+        gameEndedShown = true;
+      }
+    } else {
+      const turn = currentFen.split(' ')[1];
+      statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
+    }
+  }
+
+  // Remote mód: ha az URL-ben van session id
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   if (pathParts.length === 1) {
     sessionId = pathParts[0];
@@ -22,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (storedColor) {
       playerColor = storedColor;
     } else {
-      // Ha nincs beállítva, a csatlakozó játékos kapja a fekete szerepet
       playerColor = 'black';
       localStorage.setItem(storageKey, 'black');
     }
@@ -36,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(pollGame, 3000);
   }
 
-  // Lokális játék: "New game" gombnál
+  // Lokális játék: "New game" gombnál (reseteljük a gameEndedShown flag-et)
   document.getElementById('new-game').addEventListener('click', () => {
     fetch(`${window.location.origin}/new-session`, { method: 'POST' })
       .then(response => response.json())
@@ -47,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerColor = 'white';
         localStorage.setItem(`chess_game_${sessionId}_color`, 'white');
         boardElement.classList.remove('flipped');
+        gameEndedShown = false;
         loadGame(currentFen);
         statusElement.innerText = `Session: ${sessionId} (${playerColor})`;
       })
@@ -71,12 +97,10 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         currentFen = data.fen;
         loadGame(currentFen);
-        // Alkalmazzuk az utolsó lépés kijelölését, ha van
         if (lastMove) {
           highlightLastMove(lastMove);
         }
-        const turn = currentFen.split(' ')[1];
-        statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
+        updateStatus(data);
       })
       .catch(console.error);
   }
@@ -93,8 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
             highlightLastMove(lastMove);
           }
         }
-        const turn = currentFen.split(' ')[1];
-        statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
+        updateStatus(data);
       })
       .catch(console.error);
   }
@@ -142,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // clearHighlights: törli a sárga "highlight" osztályt, de nem érinti a "last-move" osztályt
+  // clearHighlights: törli a "highlight" osztályt, de nem érinti a "last-move" osztályt
   function clearHighlights() {
     board.forEach(row => row.forEach(square => square.classList.remove('highlight')));
   }
@@ -155,14 +178,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Convert (row, col) to algebraic notation (a-h, 1-8)
+  // Konvertálja a (row, col) értékeket algebrai jelöléssé (a-h, 1-8)
   function getAlgebraic(row, col) {
     const files = 'abcdefgh';
     const rank = 8 - row;
     return files[col] + rank;
   }
 
-  // Get square element from algebraic notation
+  // Négyzet keresése algebrai jelöléssel
   function getSquareElementFromAlgebraic(algebraic) {
     const files = 'abcdefgh';
     const file = algebraic[0];
@@ -172,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return board[row][col];
   }
 
-  // getPieceColor: determines the piece color from the image filename.
+  // getPieceColor: meghatározza a bábu színét a kép neve alapján.
   function getPieceColor(pieceElement) {
     const filename = pieceElement.src.split('/').pop();
     const letter = filename.charAt(0);
@@ -192,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clickedSquare = board[row][col];
     if (promotionModal.style.display === 'block') return;
 
-    // Lokális játék esetén nem korlátozunk a kör ellenőrzésén, remote-nál igen.
+    // Lokális játéknál nem korlátozunk a kör ellenőrzésén, remote-nál igen.
     if (!isLocal && currentFen) {
       const turn = currentFen.split(' ')[1];
       if ((playerColor === 'white' && turn !== 'w') || (playerColor === 'black' && turn !== 'b')) {
@@ -285,11 +308,15 @@ document.addEventListener('DOMContentLoaded', () => {
           alert(data.error);
         } else {
           currentFen = data.fen;
-          lastMove = data.move; // Tároljuk el az utolsó lépést
+          lastMove = data.move; // Utolsó lépés elmentése
           loadGame(currentFen);
           highlightLastMove(lastMove);
-          const turn = currentFen.split(' ')[1];
-          statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
+          // Ha a backend nem "ongoing", akkor frissítjük a státuszt és popup alert
+          if (data.status && data.status !== 'ongoing') {
+            updateStatus({ status: data.status });
+          } else {
+            fetchSessionState();
+          }
         }
         clearHighlights();
         selectedSquare = null;
@@ -367,12 +394,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lastMove) {
           highlightLastMove(lastMove);
         }
-        const turn = currentFen.split(' ')[1];
-        statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
+        fetchSessionState();
       })
       .catch(console.error);
   });
 
   createBoard();
 });
-
