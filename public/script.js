@@ -3,6 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusElement = document.getElementById('status');
   const promotionModal = document.getElementById('promotion-modal');
   const cancelPromotionBtn = document.getElementById('cancel-promotion');
+  const stateModal = document.getElementById('state-modal');
+  const stateModalHeader = document.getElementById('state-modal-header');
+  const stateModalMessage = document.getElementById('state-modal-message');
+  const closeStateModalBtn = document.getElementById('close-state-modal');
   const capturedSelfElement = document.getElementById('captured-self');
   const capturedOpponentElement = document.getElementById('captured-opponent');
 
@@ -15,11 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let playerColor = 'white'; // alapértelmezett: lokális játék esetén fehér
   let isLocal = false; // true: lokális játék
   let lastMove = null; // utolsó lépés tárolása
-  let gameEndedShown = false; // popup egyszer jelenjen meg
+  // Az aktuális state (pl. "check", "checkmate", stb.) melyet a modal már megjelenített,
+  // és ha a felhasználó bezárta, akkor dismissedState tartalmazza.
+  let modalShownState = null;
+  let dismissedState = null;
 
-  // Frissíti a levett bábuk kijelzését
+  // Frissíti a levett bábu megjelenítését
   function updateCapturedPieces(fen) {
-    // Kezdeti értékek (királyt nem számoljuk)
     const initialCounts = {
       white: { P: 8, R: 2, N: 2, B: 2, Q: 1 },
       black: { p: 8, r: 2, n: 2, b: 2, q: 1 }
@@ -33,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentCounts.black[char] = (currentCounts.black[char] || 0) + 1;
       }
     }
-    // Számoljuk ki a levett darabokat
     const capturedWhite = {};
     const capturedBlack = {};
     for (let piece in initialCounts.white) {
@@ -42,8 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let piece in initialCounts.black) {
       capturedBlack[piece] = initialCounts.black[piece] - (currentCounts.black[piece] || 0);
     }
-    // Ha a te színed fehér, akkor a te levett darabjaid az ellenfél (black) darabjai,
-    // míg az ellenfél által levett darabok a te (white) darabjaid.
     let myCaptured, opponentCaptured;
     if (playerColor === 'white') {
       myCaptured = capturedBlack;
@@ -52,8 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
       myCaptured = capturedWhite;
       opponentCaptured = capturedBlack;
     }
-
-    // Frissítsük a HTML-t
     function renderCaptured(targetElement, capturedObj) {
       targetElement.innerHTML = '';
       for (let piece in capturedObj) {
@@ -72,43 +73,70 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCaptured(capturedOpponentElement, opponentCaptured);
   }
 
+  // Megjeleníti a state modalt
+  function showStateModal(message, header = "Game Status") {
+    stateModalHeader.innerText = header;
+    stateModalMessage.innerText = message;
+    stateModal.style.display = 'block';
+    // Jegyezzük fel, hogy melyik állapotot mutattuk
+    modalShownState = message;
+  }
+
+  // Elrejti a state modalt
+  function hideStateModal() {
+    stateModal.style.display = 'none';
+    // Ha a felhasználó bezárta, akkor rögzítjük az aktuális state-et, hogy azt ne mutassa újra
+    dismissedState = modalShownState;
+    modalShownState = null;
+  }
+
+  // updateStatus: ha a backend státusza nem "ongoing", akkor popup
   function updateStatus(data) {
     if (data.status && data.status !== 'ongoing') {
       let statusText = "";
       if (data.status === 'checkmate') {
         const currentTurn = currentFen.split(' ')[1];
         statusText = currentTurn === 'w' ? 'Black wins by checkmate' : 'White wins by checkmate';
-        if (!gameEndedShown) {
-          alert(`Game ended: ${statusText}`);
-          gameEndedShown = true;
+        if (dismissedState !== statusText && modalShownState !== statusText) {
+          showStateModal(statusText, "Checkmate");
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'stalemate') {
         statusText = "Draw (stalemate)";
-        if (!gameEndedShown) {
-          alert(`Game ended: ${statusText}`);
-          gameEndedShown = true;
+        if (dismissedState !== statusText && modalShownState !== statusText) {
+          showStateModal(statusText, "Stalemate");
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'draw') {
         statusText = "Draw";
-        if (!gameEndedShown) {
-          alert(`Game ended: ${statusText}`);
-          gameEndedShown = true;
+        if (dismissedState !== statusText && modalShownState !== statusText) {
+          showStateModal(statusText, "Draw");
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'check') {
         statusText = "Check!";
+        if (dismissedState !== statusText && modalShownState !== statusText) {
+          showStateModal(statusText, "Check");
+        }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | ${statusText}`;
       } else {
         statusText = data.status;
+        if (dismissedState !== statusText && modalShownState !== statusText) {
+          showStateModal(statusText, "Game Status");
+        }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       }
     } else {
+      // Ha a játék állapota visszatér az ongoing-hez, töröljük a dismissedState-et, hogy új state esetén popup legyen
+      dismissedState = null;
       const turn = currentFen.split(' ')[1];
       statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
     }
   }
+
+  closeStateModalBtn.addEventListener('click', () => {
+    hideStateModal();
+  });
 
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   if (pathParts.length === 1) {
@@ -140,6 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
         playerColor = 'white';
         localStorage.setItem(`chess_game_${sessionId}_color`, 'white');
         boardElement.classList.remove('flipped');
+        dismissedState = null;
+        modalShownState = null;
         gameEndedShown = false;
         loadGame(currentFen);
         updateCapturedPieces(currentFen);
@@ -148,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(console.error);
   });
 
-  // Remote New Session button (ugyanaz)
+  // Remote New Session gomb – ugyanaz
   document.getElementById('new-session').addEventListener('click', () => {
     fetch(`${window.location.origin}/new-session`, { method: 'POST' })
       .then(response => response.json())
@@ -456,7 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentFen = data.fen;
         loadGame(currentFen);
         updateCapturedPieces(currentFen);
-        if (lastMove) {
+        if (data.lastMove) {
+          lastMove = data.lastMove;
           highlightLastMove(lastMove);
         }
         fetchSessionState();

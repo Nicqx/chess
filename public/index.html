@@ -43,18 +43,27 @@
     </div>
   </div>
   
+  <!-- State modal a játék végállapotához -->
+  <div id="state-modal" class="modal">
+    <div class="modal-content">
+      <h2 id="state-modal-header"></h2>
+      <p id="state-modal-message"></p>
+      <button id="close-state-modal">OK</button>
+    </div>
+  </div>
+  
   <!-- Dokumentáció -->
   <div id="documentation">
     <h2>Játékinformáció</h2>
     <p><strong>Új Remote Session:</strong> Létrehoz egy új remote játékot. A létrehozó játékos fehér, a meghívott játékos automatikusan fekete.</p>
     <p><strong>Új Lokális Játék:</strong> Egy gépen két játékos játszhat. A játék kezdetén a fehér lép, majd a fekete.</p>
     <p><strong>Remote: Új Játék (Reset):</strong> Az adott remote sessionon belül újraindítja a játékot, megtartva a színeket.</p>
-    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása, mely esetén a kör megfordul. (A backend tárolja a lépések történetét.)</p>
-    <p><strong>Feladás:</strong> Ha egy játékos feladja a játékot, a másik játékos nyert, és a játék leáll.</p>
-    <p><strong>Utolsó lépés kijelölése:</strong> A sikeres lépés után a forrás- és célmező zölddel jelenik meg, hogy látszódjon, mi volt az utolsó lépés.</p>
+    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása, mely esetén a kör megfordul.</p>
+    <p><strong>Feladás:</strong> Ha egy játékos feladja a játékot, a másik nyert.</p>
+    <p><strong>Utolsó lépés kijelölése:</strong> A sikeres lépés után a forrás- és célmező zölddel jelenik meg.</p>
     <h3>Sakk szabályok (részletes leírás magyarul)</h3>
     <p>
-      A sakk egy kétszemélyes stratégiai játék, melyben a fehér és a fekete játékos felváltva lépnek. A játék célja a király mattolása, vagyis annak elhelyezése olyan helyzetbe, hogy ne tudjon menekülni az ütések elől.
+      A sakk egy kétszemélyes stratégiai játék, melyben a fehér és a fekete játékos felváltva lépnek. A cél a király mattolása, vagyis annak elhelyezése olyan helyzetbe, hogy ne tudjon menekülni az ellenfél ütései elől.
     </p>
     <ul>
       <li><strong>Sáncolás:</strong> A király és egy torony egyszerre léphet, ha egyik sem mozdult még, és az útjuk üres.</li>

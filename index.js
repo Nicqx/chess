@@ -73,17 +73,24 @@ app.post('/new-session', async (req, res) => {
   res.json({ sessionId, fen });
 });
 
-// Get session state
+// Get session state – itt kiszámoljuk a játék állapotát a Chess.js segítségével
 app.get('/session/:id', async (req, res) => {
   const sessionId = req.params.id;
   const fen = await redisClient.get(`session:${sessionId}`);
   if (!fen) return res.status(404).json({ error: 'Session not found or expired' });
-  const ended = await redisClient.get(`session:${sessionId}:ended`);
-  const winner = await redisClient.get(`session:${sessionId}:winner`);
-  // A lastMove-ot is visszaküldjük (ha van)
+  const ended = await redisClient.get(`session:${sessionId}:ended`) || 'false';
+  const winner = await redisClient.get(`session:${sessionId}:winner`) || null;
+  const game = new Chess(fen);
+  let status = 'ongoing';
+  if (game.in_checkmate()) status = 'checkmate';
+  else if (game.in_stalemate()) status = 'stalemate';
+  else if (game.in_draw()) status = 'draw';
+  else if (game.in_check()) status = 'check';
+  // Olvassuk ki az utolsó lépést is, ha van
   const lastMoveStr = await redisClient.get(`session:${sessionId}:lastMove`);
   const lastMove = lastMoveStr ? JSON.parse(lastMoveStr) : null;
-  res.json({ fen, ended: ended || 'false', winner: winner || null, lastMove });
+  console.log("GET /session/:id ->", { fen, status, lastMove });
+  res.json({ fen, ended, winner, status, lastMove });
 });
 
 // Get legal moves for a given piece
@@ -95,6 +102,7 @@ app.get('/session/:id/legal-moves', async (req, res) => {
   if (!fen) return res.status(404).json({ error: 'Session not found or expired' });
   const game = new Chess(fen);
   const moves = game.moves({ square: from, verbose: true });
+  console.log("Legal moves from", from, "for FEN", fen, ":", moves);
   res.json({ moves });
 });
 
