@@ -8,6 +8,25 @@ body {
 #board-container {
   display: inline-block;
   margin: 20px;
+  position: relative;
+}
+
+/* Captured pieces container */
+.captured-pieces {
+  width: 80px;
+  min-height: 480px;
+  display: inline-block;
+  vertical-align: top;
+}
+
+#captured-opponent {
+  float: left;
+  text-align: left;
+}
+
+#captured-self {
+  float: right;
+  text-align: right;
 }
 
 #board {
@@ -39,8 +58,6 @@ body {
 .flipped {
   transform: rotate(180deg);
 }
-
-/* A flipped board esetében a bábukat visszaforgatjuk */
 .flipped .piece {
   transform: rotate(180deg);
 }
@@ -49,6 +66,7 @@ body {
   outline: 3px solid yellow;
 }
 
+/* A last-move osztály most a mező háttérszínét zöld árnyalattal állítja be, és nem törlődik automatikusan */
 .last-move {
   background-color: rgba(0, 255, 0, 0.3) !important;
 }

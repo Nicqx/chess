@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusElement = document.getElementById('status');
   const promotionModal = document.getElementById('promotion-modal');
   const cancelPromotionBtn = document.getElementById('cancel-promotion');
+  const capturedSelfElement = document.getElementById('captured-self');
+  const capturedOpponentElement = document.getElementById('captured-opponent');
+
   let selectedSquare = null;
   let sessionId = null;
   let currentFen = null;
@@ -12,11 +15,63 @@ document.addEventListener('DOMContentLoaded', () => {
   let playerColor = 'white'; // alapértelmezett: lokális játék esetén fehér
   let isLocal = false; // true: lokális játék
   let lastMove = null; // utolsó lépés tárolása
-  let gameEndedShown = false; // biztosítja, hogy a végállapot popup egyszer jelenjen meg
+  let gameEndedShown = false; // popup egyszer jelenjen meg
 
-  // updateStatus: Ha a backend a végállapotot jelzi, akkor:
-  // - checkmate, stalemate, draw esetén popup alert és "Game ended: ..." üzenet,
-  // - check esetén csak "Check!" jelenik meg.
+  // Frissíti a levett bábuk kijelzését
+  function updateCapturedPieces(fen) {
+    // Kezdeti értékek (királyt nem számoljuk)
+    const initialCounts = {
+      white: { P: 8, R: 2, N: 2, B: 2, Q: 1 },
+      black: { p: 8, r: 2, n: 2, b: 2, q: 1 }
+    };
+    const placement = fen.split(' ')[0];
+    const currentCounts = { white: { P: 0, R: 0, N: 0, B: 0, Q: 0 }, black: { p: 0, r: 0, n: 0, b: 0, q: 0 } };
+    for (let char of placement) {
+      if (/[PRNBQ]/.test(char)) {
+        currentCounts.white[char] = (currentCounts.white[char] || 0) + 1;
+      } else if (/[prnbq]/.test(char)) {
+        currentCounts.black[char] = (currentCounts.black[char] || 0) + 1;
+      }
+    }
+    // Számoljuk ki a levett darabokat
+    const capturedWhite = {};
+    const capturedBlack = {};
+    for (let piece in initialCounts.white) {
+      capturedWhite[piece] = initialCounts.white[piece] - (currentCounts.white[piece] || 0);
+    }
+    for (let piece in initialCounts.black) {
+      capturedBlack[piece] = initialCounts.black[piece] - (currentCounts.black[piece] || 0);
+    }
+    // Ha a te színed fehér, akkor a te levett darabjaid az ellenfél (black) darabjai,
+    // míg az ellenfél által levett darabok a te (white) darabjaid.
+    let myCaptured, opponentCaptured;
+    if (playerColor === 'white') {
+      myCaptured = capturedBlack;
+      opponentCaptured = capturedWhite;
+    } else {
+      myCaptured = capturedWhite;
+      opponentCaptured = capturedBlack;
+    }
+
+    // Frissítsük a HTML-t
+    function renderCaptured(targetElement, capturedObj) {
+      targetElement.innerHTML = '';
+      for (let piece in capturedObj) {
+        const count = capturedObj[piece];
+        for (let i = 0; i < count; i++) {
+          const img = document.createElement('img');
+          img.src = `images/${piece}.png`;
+          img.alt = piece;
+          img.style.width = '30px';
+          img.style.height = '30px';
+          targetElement.appendChild(img);
+        }
+      }
+    }
+    renderCaptured(capturedSelfElement, myCaptured);
+    renderCaptured(capturedOpponentElement, opponentCaptured);
+  }
+
   function updateStatus(data) {
     if (data.status && data.status !== 'ongoing') {
       let statusText = "";
@@ -43,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'check') {
-        // Sakk esetén csak a státusz frissül, nincs popup.
         statusText = "Check!";
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | ${statusText}`;
       } else {
@@ -56,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Remote mód: ha az URL-ben van session id
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   if (pathParts.length === 1) {
     sessionId = pathParts[0];
@@ -68,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
       playerColor = 'black';
       localStorage.setItem(storageKey, 'black');
     }
-    // Remote mód: a "flipped" osztály gondoskodik arról, hogy a fekete játékos saját bábuit alul lássa
     if (playerColor === 'black') {
       boardElement.classList.add('flipped');
     } else {
@@ -78,7 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(pollGame, 3000);
   }
 
-  // Lokális játék: "New game" gombnál (reseteljük a gameEndedShown flag-et)
   document.getElementById('new-game').addEventListener('click', () => {
     fetch(`${window.location.origin}/new-session`, { method: 'POST' })
       .then(response => response.json())
@@ -91,12 +142,13 @@ document.addEventListener('DOMContentLoaded', () => {
         boardElement.classList.remove('flipped');
         gameEndedShown = false;
         loadGame(currentFen);
+        updateCapturedPieces(currentFen);
         statusElement.innerText = `Session: ${sessionId} (${playerColor})`;
       })
       .catch(console.error);
   });
 
-  // Remote "New session" gomb
+  // Remote New Session button (ugyanaz)
   document.getElementById('new-session').addEventListener('click', () => {
     fetch(`${window.location.origin}/new-session`, { method: 'POST' })
       .then(response => response.json())
@@ -114,7 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         currentFen = data.fen;
         loadGame(currentFen);
-        if (lastMove) {
+        updateCapturedPieces(currentFen);
+        if (data.lastMove) {
+          lastMove = data.lastMove;
           highlightLastMove(lastMove);
         }
         updateStatus(data);
@@ -130,7 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.fen !== currentFen) {
           currentFen = data.fen;
           loadGame(currentFen);
-          if (lastMove) {
+          updateCapturedPieces(currentFen);
+          if (data.lastMove) {
+            lastMove = data.lastMove;
             highlightLastMove(lastMove);
           }
         }
@@ -139,7 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(console.error);
   }
 
-  // 8x8-as tábla létrehozása
   function createBoard() {
     boardElement.innerHTML = '';
     board = [];
@@ -159,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // FEN alapján kirajzolja a táblát
   function loadGame(fen) {
     const parts = fen.split(' ');
     const position = parts[0];
@@ -182,12 +236,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // clearHighlights: törli a "highlight" osztályt, de nem érinti a "last-move" osztályt
   function clearHighlights() {
     board.forEach(row => row.forEach(square => square.classList.remove('highlight')));
   }
 
-  // Highlight legal moves (yellow)
   function highlightLegalMoves(fromSquare, moves) {
     moves.forEach(move => {
       const target = getSquareElementFromAlgebraic(move.to);
@@ -195,14 +247,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Konvertálja a (row, col) értékeket algebrai jelöléssé (a-h, 1-8)
   function getAlgebraic(row, col) {
     const files = 'abcdefgh';
     const rank = 8 - row;
     return files[col] + rank;
   }
 
-  // Négyzet keresése algebrai jelöléssel
   function getSquareElementFromAlgebraic(algebraic) {
     const files = 'abcdefgh';
     const file = algebraic[0];
@@ -212,27 +262,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return board[row][col];
   }
 
-  // getPieceColor: meghatározza a bábu színét a kép neve alapján.
   function getPieceColor(pieceElement) {
     const filename = pieceElement.src.split('/').pop();
     const letter = filename.charAt(0);
     return letter === letter.toUpperCase() ? 'white' : 'black';
   }
 
-  // Highlight the last move: módosítjuk úgy, hogy a mezők háttérszínét állítjuk zöld árnyalatra
   function highlightLastMove(move) {
+    board.forEach(row => row.forEach(square => square.classList.remove('last-move')));
     const fromSquare = getSquareElementFromAlgebraic(move.from);
     const toSquare = getSquareElementFromAlgebraic(move.to);
     if (fromSquare) fromSquare.classList.add('last-move');
     if (toSquare) toSquare.classList.add('last-move');
   }
 
-  // Square click handler
   function onSquareClick(row, col) {
     const clickedSquare = board[row][col];
     if (promotionModal.style.display === 'block') return;
 
-    // Lokális játéknál nem korlátozunk, remote-nál ellenőrizzük a köröket.
     if (!isLocal && currentFen) {
       const turn = currentFen.split(' ')[1];
       if ((playerColor === 'white' && turn !== 'w') || (playerColor === 'black' && turn !== 'b')) {
@@ -325,15 +372,15 @@ document.addEventListener('DOMContentLoaded', () => {
           alert(data.error);
         } else {
           currentFen = data.fen;
-          lastMove = data.move; // Utolsó lépés elmentése
+          lastMove = data.move;
           loadGame(currentFen);
           highlightLastMove(lastMove);
-          // Ha a move response status nem "ongoing", akkor popup
           if (data.status && data.status !== 'ongoing') {
             updateStatus({ status: data.status });
           } else {
             fetchSessionState();
           }
+          updateCapturedPieces(currentFen);
         }
         clearHighlights();
         selectedSquare = null;
@@ -378,6 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           currentFen = data.fen;
           loadGame(currentFen);
+          updateCapturedPieces(currentFen);
           statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ongoing`;
         }
       })
@@ -400,7 +448,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(console.error);
   });
 
-  // Remote mode: "New game" button resets current session (preserving colors)
   document.getElementById('remote-newgame')?.addEventListener('click', () => {
     if (!sessionId) return;
     fetch(`${window.location.origin}/session/${sessionId}/newgame`, { method: 'POST' })
@@ -408,6 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         currentFen = data.fen;
         loadGame(currentFen);
+        updateCapturedPieces(currentFen);
         if (lastMove) {
           highlightLastMove(lastMove);
         }

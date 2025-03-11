@@ -80,7 +80,10 @@ app.get('/session/:id', async (req, res) => {
   if (!fen) return res.status(404).json({ error: 'Session not found or expired' });
   const ended = await redisClient.get(`session:${sessionId}:ended`);
   const winner = await redisClient.get(`session:${sessionId}:winner`);
-  res.json({ fen, ended: ended || 'false', winner: winner || null });
+  // A lastMove-ot is visszaküldjük (ha van)
+  const lastMoveStr = await redisClient.get(`session:${sessionId}:lastMove`);
+  const lastMove = lastMoveStr ? JSON.parse(lastMoveStr) : null;
+  res.json({ fen, ended: ended || 'false', winner: winner || null, lastMove });
 });
 
 // Get legal moves for a given piece
@@ -118,8 +121,9 @@ app.post('/session/:id/move', async (req, res) => {
   if (game.in_checkmate()) status = 'checkmate';
   else if (game.in_stalemate()) status = 'stalemate';
   else if (game.in_draw()) status = 'draw';
-  else if (game.in_check()) status = 'check'; // <-- Ezt add hozzá!
+  else if (game.in_check()) status = 'check';
   console.log("New FEN:", newFen);
+  await redisClient.set(`session:${sessionId}:lastMove`, JSON.stringify(move), { EX: sessionTimeout });
   res.json({ move, fen: newFen, status });
 });
 
