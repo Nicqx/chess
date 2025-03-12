@@ -19,10 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let playerColor = 'white'; // alapértelmezett: lokális játék esetén fehér
   let isLocal = false; // true: lokális játék
   let lastMove = null; // utolsó lépés tárolása
-  // Az aktuális state (pl. "check", "checkmate", stb.) melyet a modal már megjelenített,
-  // és ha a felhasználó bezárta, akkor dismissedState tartalmazza.
-  let modalShownState = null;
-  let dismissedState = null;
+  let gameEndedShown = false; // flag, hogy a státusz modal egyszer megjelenjen
 
   // Frissíti a levett bábu megjelenítését
   function updateCapturedPieces(fen) {
@@ -78,57 +75,51 @@ document.addEventListener('DOMContentLoaded', () => {
     stateModalHeader.innerText = header;
     stateModalMessage.innerText = message;
     stateModal.style.display = 'block';
-    // Jegyezzük fel, hogy melyik állapotot mutattuk
-    modalShownState = message;
   }
 
   // Elrejti a state modalt
   function hideStateModal() {
     stateModal.style.display = 'none';
-    // Ha a felhasználó bezárta, akkor rögzítjük az aktuális state-et, hogy azt ne mutassa újra
-    dismissedState = modalShownState;
-    modalShownState = null;
   }
 
-  // updateStatus: ha a backend státusza nem "ongoing", akkor popup
+  // updateStatus: ha a backend státusza nem "ongoing", akkor popup jelenjen meg
   function updateStatus(data) {
     if (data.status && data.status !== 'ongoing') {
       let statusText = "";
       if (data.status === 'checkmate') {
         const currentTurn = currentFen.split(' ')[1];
         statusText = currentTurn === 'w' ? 'Black wins by checkmate' : 'White wins by checkmate';
-        if (dismissedState !== statusText && modalShownState !== statusText) {
+        if (!gameEndedShown) {
           showStateModal(statusText, "Checkmate");
+          gameEndedShown = true;
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'stalemate') {
         statusText = "Draw (stalemate)";
-        if (dismissedState !== statusText && modalShownState !== statusText) {
+        if (!gameEndedShown) {
           showStateModal(statusText, "Stalemate");
+          gameEndedShown = true;
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'draw') {
         statusText = "Draw";
-        if (dismissedState !== statusText && modalShownState !== statusText) {
+        if (!gameEndedShown) {
           showStateModal(statusText, "Draw");
+          gameEndedShown = true;
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'check') {
         statusText = "Check!";
-        if (dismissedState !== statusText && modalShownState !== statusText) {
+        if (!gameEndedShown) {
           showStateModal(statusText, "Check");
+          gameEndedShown = true;
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | ${statusText}`;
       } else {
         statusText = data.status;
-        if (dismissedState !== statusText && modalShownState !== statusText) {
-          showStateModal(statusText, "Game Status");
-        }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       }
     } else {
-      // Ha a játék állapota visszatér az ongoing-hez, töröljük a dismissedState-et, hogy új state esetén popup legyen
-      dismissedState = null;
       const turn = currentFen.split(' ')[1];
       statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
     }
@@ -168,8 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         playerColor = 'white';
         localStorage.setItem(`chess_game_${sessionId}_color`, 'white');
         boardElement.classList.remove('flipped');
-        dismissedState = null;
-        modalShownState = null;
         gameEndedShown = false;
         loadGame(currentFen);
         updateCapturedPieces(currentFen);
@@ -194,6 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch(`${window.location.origin}/session/${sessionId}`)
       .then(res => res.json())
       .then(data => {
+        // Ha a FEN változik (vagy új move érkezik), reseteljük a gameEndedShown flag-et
+        if (data.fen !== currentFen) {
+          gameEndedShown = false;
+        }
         currentFen = data.fen;
         loadGame(currentFen);
         updateCapturedPieces(currentFen);
@@ -212,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(res => res.json())
       .then(data => {
         if (data.fen !== currentFen) {
+          gameEndedShown = false;
           currentFen = data.fen;
           loadGame(currentFen);
           updateCapturedPieces(currentFen);
@@ -405,6 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
           lastMove = data.move;
           loadGame(currentFen);
           highlightLastMove(lastMove);
+          // Reset the check flag on a successful move
+          gameEndedShown = false;
           if (data.status && data.status !== 'ongoing') {
             updateStatus({ status: data.status });
           } else {
