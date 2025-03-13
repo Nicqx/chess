@@ -5,13 +5,83 @@ body {
   padding: 0;
 }
 
+/* Board wrapper és label-ek */
+#board-wrapper {
+  position: relative;
+  width: 480px;
+  margin: 20px auto;
+}
+
+/* Top és bottom file label-ek */
+.file-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 480px;
+  font-weight: bold;
+  text-align: center;
+  margin: 0 auto;
+}
+
+#file-labels-top {
+  position: absolute;
+  top: -25px;
+  left: 0;
+}
+
+#file-labels-bottom {
+  position: absolute;
+  bottom: -25px;
+  left: 0;
+}
+
+/* Left és right rank label-ek */
+.rank-labels {
+  position: absolute;
+  height: 480px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-weight: bold;
+  text-align: center;
+  width: 20px;
+}
+
+#rank-labels-left {
+  left: -25px;
+  top: 0;
+}
+
+#rank-labels-right {
+  right: -25px;
+  top: 0;
+}
+
+/* Ha a board-wrapper kap "flipped-labels", a file és rank címkék sorrendje megfordul anélkül, hogy a szöveg elforgatódna */
+.flipped-labels .file-labels {
+  flex-direction: row-reverse;
+}
+.flipped-labels .rank-labels {
+  flex-direction: column-reverse;
+}
+
+/* Board container */
 #board-container {
-  display: inline-block;
-  margin: 20px;
+  position: relative;
+  width: 480px;
+  height: 480px;
+  margin: 0;
+}
+
+/* Board */
+#board {
+  width: 480px;
+  height: 480px;
+  border: 2px solid #333;
+  margin: 0 auto;
   position: relative;
 }
 
-/* Captured pieces container */
+/* Captured pieces konténerek */
 .captured-pieces {
   width: 80px;
   min-height: 480px;
@@ -27,14 +97,6 @@ body {
 #captured-self {
   float: right;
   text-align: right;
-}
-
-#board {
-  width: 480px;
-  height: 480px;
-  border: 2px solid #333;
-  margin: 0 auto;
-  position: relative;
 }
 
 /* Mezők: alternáló színek */
@@ -54,7 +116,7 @@ body {
   background-color: #b58863;
 }
 
-/* Remote játék esetében a flipped osztály: forog a board */
+/* Flipped board – remote játék esetén */
 .flipped {
   transform: rotate(180deg);
 }
@@ -62,15 +124,16 @@ body {
   transform: rotate(180deg);
 }
 
+/* Jelölések */
 .highlight {
   outline: 3px solid yellow;
 }
 
-/* Az utolsó lépés kijelölése: zöld háttér */
 .last-move {
   background-color: rgba(0, 255, 0, 0.3) !important;
 }
 
+/* Egyéb stílusok */
 .controls {
   margin: 20px;
 }

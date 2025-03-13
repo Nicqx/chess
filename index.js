@@ -73,7 +73,7 @@ app.post('/new-session', async (req, res) => {
   res.json({ sessionId, fen });
 });
 
-// Get session state – itt kiszámoljuk a játék állapotát a Chess.js segítségével
+// Get session state – calculate game status using Chess.js
 app.get('/session/:id', async (req, res) => {
   const sessionId = req.params.id;
   const fen = await redisClient.get(`session:${sessionId}`);
@@ -86,7 +86,6 @@ app.get('/session/:id', async (req, res) => {
   else if (game.in_stalemate()) status = 'stalemate';
   else if (game.in_draw()) status = 'draw';
   else if (game.in_check()) status = 'check';
-  // Olvassuk ki az utolsó lépést is, ha van
   const lastMoveStr = await redisClient.get(`session:${sessionId}:lastMove`);
   const lastMove = lastMoveStr ? JSON.parse(lastMoveStr) : null;
   console.log("GET /session/:id ->", { fen, status, lastMove });

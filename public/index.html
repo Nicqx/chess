@@ -8,12 +8,49 @@
 <body>
   <h1>Online Chess Game</h1>
   
-  <div id="captured-opponent" class="captured-pieces"></div>
-  
-  <div id="board-container">
-    <div id="board"></div>
+  <div id="board-wrapper">
+    <!-- Top file labels -->
+    <div id="file-labels-top" class="file-labels">
+      <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+    </div>
+    
+    <!-- Left rank labels -->
+    <div id="rank-labels-left" class="rank-labels">
+      <div>8</div>
+      <div>7</div>
+      <div>6</div>
+      <div>5</div>
+      <div>4</div>
+      <div>3</div>
+      <div>2</div>
+      <div>1</div>
+    </div>
+    
+    <!-- Board container -->
+    <div id="board-container">
+      <div id="board"></div>
+    </div>
+    
+    <!-- Right rank labels -->
+    <div id="rank-labels-right" class="rank-labels">
+      <div>8</div>
+      <div>7</div>
+      <div>6</div>
+      <div>5</div>
+      <div>4</div>
+      <div>3</div>
+      <div>2</div>
+      <div>1</div>
+    </div>
+    
+    <!-- Bottom file labels -->
+    <div id="file-labels-bottom" class="file-labels">
+      <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+    </div>
   </div>
   
+  <!-- Captured pieces containers -->
+  <div id="captured-opponent" class="captured-pieces"></div>
   <div id="captured-self" class="captured-pieces"></div>
   
   <div id="status"></div>
@@ -58,23 +95,11 @@
     <p><strong>Új Remote Session:</strong> Létrehoz egy új remote játékot. A létrehozó játékos fehér, a meghívott játékos automatikusan fekete.</p>
     <p><strong>Új Lokális Játék:</strong> Egy gépen két játékos játszhat. A játék kezdetén a fehér lép, majd a fekete.</p>
     <p><strong>Remote: Új Játék (Reset):</strong> Az adott remote sessionon belül újraindítja a játékot, megtartva a színeket.</p>
-    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása, mely esetén a kör megfordul.</p>
-    <p><strong>Feladás:</strong> Ha egy játékos feladja a játékot, a másik nyert.</p>
-    <p><strong>Utolsó lépés kijelölése:</strong> A sikeres lépés után a forrás- és célmező zölddel jelenik meg.</p>
-    <h3>Sakk szabályok (részletes leírás magyarul)</h3>
-    <p>
-      A sakk egy kétszemélyes stratégiai játék, melyben a fehér és a fekete játékos felváltva lépnek. A cél a király mattolása, vagyis annak elhelyezése olyan helyzetbe, hogy ne tudjon menekülni az ellenfél ütései elől.
-    </p>
-    <ul>
-      <li><strong>Sáncolás:</strong> A király és egy torony egyszerre léphet, ha egyik sem mozdult még, és az útjuk üres.</li>
-      <li><strong>En passant:</strong> Egy gyalog speciális ütése, ha az ellenfél gyalogja két mezőt lép, és mellette áll.</li>
-      <li><strong>Promóció:</strong> Amikor egy gyalog eléri az ellenfél alapvonalát, a játékos bármilyen más bábut választhat (általában királynőt).</li>
-      <li><strong>Patt:</strong> Ha az ellenfél nem tud érvényes lépést végrehajtani, és nincs sak, döntetlen a játék.</li>
-      <li><strong>Döntetlen szabályok:</strong> Pl. háromszoros pozícióismétlés, ötven lépés szabály stb.</li>
-    </ul>
-    <p>
-      Ezek mellett a sakk számos finom szabályt tartalmaz, amelyek biztosítják a játék mélységét és stratégiáját.
-    </p>
+    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása.</p>
+    <p><strong>Feladás:</strong> Ha egy játékos feladja a játékot, a másik játékos nyert.</p>
+    <p><strong>Utolsó lépés kijelölése:</strong> Az utolsó lépés forrás- és célmezője zölddel jelenik meg.</p>
+    <h3>Sakk szabályok</h3>
+    <p>A sakk szabályai...</p>
   </div>
   
   <script src="script.js"></script>

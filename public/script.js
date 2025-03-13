@@ -9,17 +9,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeStateModalBtn = document.getElementById('close-state-modal');
   const capturedSelfElement = document.getElementById('captured-self');
   const capturedOpponentElement = document.getElementById('captured-opponent');
+  const boardWrapper = document.getElementById('board-wrapper');
 
   let selectedSquare = null;
   let sessionId = null;
   let currentFen = null;
-  let board = []; // 2D tömb a négyzetek tárolásához
+  let board = [];
   let legalMoves = [];
-  let pendingMove = null; // olyan lépés, amely promóciót igényel
-  let playerColor = 'white'; // alapértelmezett: lokális játék esetén fehér
-  let isLocal = false; // true: lokális játék
-  let lastMove = null; // utolsó lépés tárolása
-  let gameEndedShown = false; // flag, hogy a státusz modal egyszer megjelenjen
+  let pendingMove = null;
+  let playerColor = 'white';
+  let isLocal = false;
+  let lastMove = null;
+  let gameEndedShown = false;
 
   // Frissíti a levett bábu megjelenítését
   function updateCapturedPieces(fen) {
@@ -82,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stateModal.style.display = 'none';
   }
 
-  // updateStatus: ha a backend státusza nem "ongoing", akkor popup jelenjen meg
+  // updateStatus: ha a státusz nem ongoing, modal jelenik meg (csak egyszer a flag miatt)
   function updateStatus(data) {
     if (data.status && data.status !== 'ongoing') {
       let statusText = "";
@@ -129,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hideStateModal();
   });
 
+  // Ha a remote session esetén a játékos fekete, akkor a board-wrapper kapja a "flipped-labels" osztályt
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   if (pathParts.length === 1) {
     sessionId = pathParts[0];
@@ -142,8 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (playerColor === 'black') {
       boardElement.classList.add('flipped');
+      boardWrapper.classList.add('flipped-labels');
     } else {
       boardElement.classList.remove('flipped');
+      boardWrapper.classList.remove('flipped-labels');
     }
     fetchSessionState();
     setInterval(pollGame, 3000);
@@ -159,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerColor = 'white';
         localStorage.setItem(`chess_game_${sessionId}_color`, 'white');
         boardElement.classList.remove('flipped');
+        boardWrapper.classList.remove('flipped-labels');
         gameEndedShown = false;
         loadGame(currentFen);
         updateCapturedPieces(currentFen);
@@ -167,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(console.error);
   });
 
-  // Remote New Session gomb – ugyanaz
+  // Remote New Session button – ugyanaz
   document.getElementById('new-session').addEventListener('click', () => {
     fetch(`${window.location.origin}/new-session`, { method: 'POST' })
       .then(response => response.json())
@@ -183,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch(`${window.location.origin}/session/${sessionId}`)
       .then(res => res.json())
       .then(data => {
-        // Ha a FEN változik (vagy új move érkezik), reseteljük a gameEndedShown flag-et
         if (data.fen !== currentFen) {
           gameEndedShown = false;
         }
@@ -399,7 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
           lastMove = data.move;
           loadGame(currentFen);
           highlightLastMove(lastMove);
-          // Reset the check flag on a successful move
           gameEndedShown = false;
           if (data.status && data.status !== 'ongoing') {
             updateStatus({ status: data.status });
