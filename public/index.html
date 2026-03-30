@@ -106,16 +106,141 @@
 
   <div id="documentation">
     <h2>Játékinformáció</h2>
-    <p><strong>Új Remote Session:</strong> Létrehoz egy új remote játékot. A létrehozó játékos fehér, a meghívott játékos automatikusan fekete.</p>
-    <p><strong>Új Lokális Játék:</strong> Egy gépen két játékos játszhat. A játék kezdetén a fehér lép, majd a fekete.</p>
-    <p><strong>Játék a gép ellen:</strong> Egyedül játszhatsz a szerveroldali gépi ellenfél ellen. Kiválaszthatod, hogy fehérrel vagy feketével indulsz, és a nehézséget is 1–10 között állíthatod.</p>
-    <p><strong>Új Játék / Reset:</strong> Az adott sessionon belül újraindítja a játékot.</p>
-    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása. Gép elleni módban egy visszavonás a te és a gép utolsó lépéspárját is visszaveheti.</p>
-    <p><strong>Feladás:</strong> Ha egy játékos feladja a játékot, a másik játékos nyert.</p>
-    <p><strong>Utolsó lépés kijelölése:</strong> Az utolsó lépés forrás- és célmezője zölddel jelenik meg.</p>
 
-    <h3>Sakk szabályok</h3>
-    <p>A sakk szabályai...</p>
+    <p><strong>Új Remote Session:</strong> Létrehoz egy új online játékot. A létrehozó játékos fehér, a másik játékos a session link megnyitásával csatlakozhat, és feketével játszik.</p>
+
+    <p><strong>Új Lokális Játék:</strong> Egy eszközön két játékos játszik egymás ellen. Ilyenkor nincs külön ember–gép vagy online szerepkiosztás, a játékosok felváltva lépnek ugyanazon a táblán.</p>
+
+    <p><strong>Játék a gép ellen:</strong> A gép ellen játszhatsz fehérrel vagy feketével. A nehézséget 1–10 között lehet beállítani. Ha a gép a fehér, automatikusan megteszi az első lépést. Ha a gép a fekete, a te lépésed után automatikusan válaszol.</p>
+
+    <p><strong>Új Játék / Reset:</strong> Az aktuális sessionön belül újraindítja a partit alapállásból.</p>
+
+    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása. Gép elleni módban egy visszavonás jellemzően a te legutóbbi lépésedet és a gép válaszát együtt veszi vissza, hogy ismét te következz.</p>
+
+    <p><strong>Feladás:</strong> A feladó játékos azonnal elveszíti a partit, a másik fél győz.</p>
+
+    <p><strong>Utolsó lépés kijelölése:</strong> Az utoljára megtett lépés kezdő- és célmezője zölddel jelenik meg.</p>
+
+    <h2>Sakk szabályai</h2>
+
+    <h3>1. A játék célja</h3>
+    <p>A sakk célja az ellenfél királyának mattadása. Matt akkor van, ha a király sakkban áll, és nincs olyan szabályos lépés, amellyel a játékos megszüntethetné a sakkot.</p>
+
+    <h3>2. A kezdőállás</h3>
+    <p>Minden játékos 16 bábuval kezd:</p>
+    <p>1 király, 1 vezér, 2 bástya, 2 futó, 2 huszár és 8 gyalog.</p>
+    <p>A világos kezd. A vezér mindig a saját színének megfelelő mezőn áll: világos vezér világos mezőn, sötét vezér sötét mezőn.</p>
+
+    <h3>3. A lépések sorrendje</h3>
+    <p>A játékosok felváltva lépnek, mindig egyet. A világos kezd, majd sötét következik, és ez így váltakozik a parti végéig.</p>
+
+    <h3>4. A bábuk lépései</h3>
+
+    <h4>Király</h4>
+    <p>A király egy mezőt léphet bármely irányba: vízszintesen, függőlegesen vagy átlósan. Nem léphet olyan mezőre, amelyet ellenfél bábuja támad.</p>
+
+    <h4>Vezér</h4>
+    <p>A vezér tetszőleges számú mezőt léphet egyenes vonalban: vízszintesen, függőlegesen vagy átlósan, amíg nem ütközik másik bábuba.</p>
+
+    <h4>Bástya</h4>
+    <p>A bástya tetszőleges számú mezőt léphet vízszintesen vagy függőlegesen.</p>
+
+    <h4>Futó</h4>
+    <p>A futó tetszőleges számú mezőt léphet átlósan. Egy futó mindig ugyanazon színű mezőkön marad.</p>
+
+    <h4>Huszár</h4>
+    <p>A huszár „L” alakban lép: két mezőt egy irányba, majd egy mezőt arra merőlegesen. A huszár az egyetlen bábu, amely átugorhat más bábuk fölött.</p>
+
+    <h4>Gyalog</h4>
+    <p>A gyalog alaphelyzetben egy mezőt lép előre, de az első lépésén kettőt is léphet, ha mindkét mező szabad. Ütni viszont nem előre üt, hanem egy mezőt átlósan előre. A gyalog nem léphet hátrafelé.</p>
+
+    <h3>5. Ütés</h3>
+    <p>Ha egy bábu olyan mezőre lép, amelyen ellenfél bábuja áll, akkor azt leüti, és a leütött bábu lekerül a tábláról. Saját bábut nem lehet leütni, és saját bábuval elfoglalt mezőre nem lehet lépni.</p>
+
+    <h3>6. Sakk</h3>
+    <p>Sakkról akkor beszélünk, ha az egyik játékos királyát az ellenfél valamelyik bábuja közvetlenül támadja. A sakkban álló játékosnak kötelező olyan lépést tenni, amely megszünteti a sakkot.</p>
+
+    <p>A sakk megszüntethető háromféleképpen:</p>
+    <p>– a király elmozdul egy nem támadott mezőre,</p>
+    <p>– a támadó bábu leütésre kerül,</p>
+    <p>– a támadó vonalába egy bábu közbelép.</p>
+
+    <p>Közbelépni csak akkor lehet, ha a támadó bábu futó, bástya vagy vezér. Huszár és gyalog támadása ellen közbelépés nem lehetséges.</p>
+
+    <h3>7. Matt</h3>
+    <p>Matt van, ha a király sakkban áll, és nincs egyetlen szabályos lépés sem, amellyel a sakk megszüntethető. Ilyenkor a játék azonnal véget ér, és a mattot adó fél nyer.</p>
+
+    <h3>8. Patt</h3>
+    <p>Patt akkor van, ha a soron következő játékos nincs sakkban, de nincs egyetlen szabályos lépése sem. A patt döntetlen.</p>
+
+    <h3>9. Sáncolás</h3>
+    <p>A sáncolás egy különleges királylépés, amelyben a király és az egyik bástya egyszerre mozog.</p>
+
+    <p><strong>Kis sánc:</strong> a király két mezőt lép a királyszárny felé, a bástya pedig átugrik a király mellé.</p>
+    <p><strong>Nagy sánc:</strong> a király két mezőt lép a vezérszárny felé, a bástya pedig a király mellé kerül a másik oldalról.</p>
+
+    <p>Sáncolni csak akkor lehet, ha mindegyik feltétel teljesül:</p>
+    <p>– a király még nem lépett a partiban,</p>
+    <p>– az érintett bástya még nem lépett a partiban,</p>
+    <p>– a király és a bástya között nincs bábu,</p>
+    <p>– a király nincs sakkban,</p>
+    <p>– a király nem halad át támadott mezőn,</p>
+    <p>– a király nem érkezik támadott mezőre.</p>
+
+    <p>A bástya által érintett mező lehet támadott, ez önmagában nem tiltja a sáncolást. A tiltás a király útvonalára és célmezőjére vonatkozik.</p>
+
+    <h3>10. En passant</h3>
+    <p>Az en passant egy különleges gyalogütés. Akkor lehetséges, ha egy gyalog az alaphelyzetéből egyszerre kettőt lép, és ezzel egy ellenfél gyalogja mellé kerül úgy, mintha azt egy mezőt lépett volna előre.</p>
+
+    <p>Ilyenkor az ellenfél a következő lépésben leütheti ezt a gyalogot úgy, mintha csak egy mezőt lépett volna. Az en passant csak azonnal, a következő lépésben hajtható végre. Ha kimarad, később már nem lehetséges.</p>
+
+    <h3>11. Gyalogpromóció</h3>
+    <p>Ha egy gyalog eléri a tábla utolsó sorát, kötelező átváltoztatni. A játékos választhat, hogy vezért, bástyát, futót vagy huszárt kér helyette. A választás nem függ attól, hogy abból a figurából van-e még saját a táblán.</p>
+
+    <p>A legtöbbször vezérre történik a promóció, de előfordulhat, hogy másik figurára való átváltozás a jobb lépés.</p>
+
+    <h3>12. Szabálytalan lépés</h3>
+    <p>Szabálytalan minden olyan lépés, amely megsérti a bábuk mozgási szabályait, átmegy foglalt mezőn ott, ahol nem lehet, vagy a saját királyt sakkban hagyja.</p>
+
+    <p>Olyan lépés nem megengedett, amely után a saját király továbbra is sakkban maradna.</p>
+
+    <h3>13. Döntetlen esetek</h3>
+
+    <h4>Patt</h4>
+    <p>Ha a soron következő játékosnak nincs szabályos lépése, de nincs sakkban, a parti döntetlen.</p>
+
+    <h4>Háromszori állásismétlés</h4>
+    <p>Ha ugyanaz az állás ugyanazzal a lépésjoggal és ugyanazokkal a lehetséges különleges jogokkal háromszor előfordul, a parti döntetlen lehet.</p>
+
+    <h4>Ötvenszabály</h4>
+    <p>Ha egymás után 50 teljes lépésen keresztül nem történt gyaloglépés és nem történt ütés, a parti döntetlen lehet.</p>
+
+    <h4>Elégtelen anyag</h4>
+    <p>Döntetlen az állás akkor is, ha egyik fél sem tud mattot adni semmilyen szabályos játéksorral. Tipikus példák:</p>
+    <p>– király a király ellen,</p>
+    <p>– király és futó a király ellen,</p>
+    <p>– király és huszár a király ellen.</p>
+
+    <h4>Közös megegyezés</h4>
+    <p>A játékosok közös megegyezéssel is döntetlenben állapodhatnak meg, ha a játékkörnyezet ezt lehetővé teszi.</p>
+
+    <h3>14. Mikor nyer valaki?</h3>
+    <p>Egy játékos nyer, ha:</p>
+    <p>– mattot ad az ellenfél királyának,</p>
+    <p>– az ellenfél feladja a partit,</p>
+    <p>– az ellenfél ideje lejár egy időmérős játékban, és a győztes félnek van elméleti mattadó anyaga,</p>
+    <p>– a versenyszabályok szerint az ellenfél más módon elveszíti a partit.</p>
+
+    <h3>15. Idő és versenyszabályok</h3>
+    <p>A klasszikus sakkban gyakran órával játszanak, de ezen az oldalon a parti alapvetően lépésekre épül. A program a lépésjogi szabályokat kezeli, az olyan versenyszabályok viszont, mint a touch-move, a jegyzőkönyvvezetés vagy a versenybírói döntések, itt nem relevánsak.</p>
+
+    <h3>16. Rövid gyakorlati összefoglaló</h3>
+    <p>– A világos kezd.</p>
+    <p>– Mindig csak szabályos lépést lehet tenni.</p>
+    <p>– A saját királyt nem szabad sakkban hagyni.</p>
+    <p>– A cél a mattadás.</p>
+    <p>– Ha nincs szabályos lépés és nincs sakk: patt, döntetlen.</p>
+    <p>– A különleges szabályok: sáncolás, en passant, promóció.</p>
   </div>
 
   <script src="script.js"></script>
