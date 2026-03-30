@@ -56,10 +56,11 @@ body {
   top: 0;
 }
 
-/* Ha a board-wrapper kap "flipped-labels", a file és rank címkék sorrendje megfordul anélkül, hogy a szöveg elforgatódna */
+/* Ha a board-wrapper kap "flipped-labels", a file és rank címkék sorrendje megfordul */
 .flipped-labels .file-labels {
   flex-direction: row-reverse;
 }
+
 .flipped-labels .rank-labels {
   flex-direction: column-reverse;
 }
@@ -116,10 +117,11 @@ body {
   background-color: #b58863;
 }
 
-/* Flipped board – remote játék esetén */
+/* Flipped board */
 .flipped {
   transform: rotate(180deg);
 }
+
 .flipped .piece {
   transform: rotate(180deg);
 }
@@ -135,7 +137,22 @@ body {
 
 /* Egyéb stílusok */
 .controls {
-  margin: 20px;
+  margin: 20px auto;
+  max-width: 900px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.controls button,
+.controls select {
+  padding: 8px 10px;
+}
+
+.controls label {
+  font-weight: bold;
 }
 
 #status {

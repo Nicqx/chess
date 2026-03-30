@@ -7,14 +7,12 @@
 </head>
 <body>
   <h1>Online Chess Game</h1>
-  
+
   <div id="board-wrapper">
-    <!-- Top file labels -->
     <div id="file-labels-top" class="file-labels">
       <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
     </div>
-    
-    <!-- Left rank labels -->
+
     <div id="rank-labels-left" class="rank-labels">
       <div>8</div>
       <div>7</div>
@@ -25,13 +23,11 @@
       <div>2</div>
       <div>1</div>
     </div>
-    
-    <!-- Board container -->
+
     <div id="board-container">
       <div id="board"></div>
     </div>
-    
-    <!-- Right rank labels -->
+
     <div id="rank-labels-right" class="rank-labels">
       <div>8</div>
       <div>7</div>
@@ -42,30 +38,50 @@
       <div>2</div>
       <div>1</div>
     </div>
-    
-    <!-- Bottom file labels -->
+
     <div id="file-labels-bottom" class="file-labels">
       <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
     </div>
   </div>
-  
-  <!-- Captured pieces containers -->
+
   <div id="captured-opponent" class="captured-pieces"></div>
   <div id="captured-self" class="captured-pieces"></div>
-  
+
   <div id="status"></div>
-  
+
   <div class="controls">
     <button id="new-session">Új Remote Session</button>
     <button id="new-game">Új Lokális Játék</button>
-    <button id="remote-newgame">Remote: Új Játék (Reset)</button>
+
+    <button id="new-vs-computer">Játék a gép ellen</button>
+
+    <label for="human-color">Te:</label>
+    <select id="human-color">
+      <option value="w">Fehér</option>
+      <option value="b">Fekete</option>
+    </select>
+
+    <label for="ai-difficulty">Gép szint:</label>
+    <select id="ai-difficulty">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5" selected>5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+      <option value="9">9</option>
+      <option value="10">10</option>
+    </select>
+
+    <button id="remote-newgame">Új Játék / Reset</button>
     <button id="undo">Visszavonás</button>
     <button id="resign">Feladás</button>
   </div>
-  
+
   <div id="last-move-info"></div>
-  
-  <!-- Promóció popup modal -->
+
   <div id="promotion-modal" class="modal">
     <div class="modal-content">
       <h2>Promóció</h2>
@@ -79,8 +95,7 @@
       <button id="cancel-promotion">Mégse</button>
     </div>
   </div>
-  
-  <!-- State modal a játék végállapotához -->
+
   <div id="state-modal" class="modal">
     <div class="modal-content">
       <h2 id="state-modal-header"></h2>
@@ -88,20 +103,21 @@
       <button id="close-state-modal">OK</button>
     </div>
   </div>
-  
-  <!-- Dokumentáció -->
+
   <div id="documentation">
     <h2>Játékinformáció</h2>
     <p><strong>Új Remote Session:</strong> Létrehoz egy új remote játékot. A létrehozó játékos fehér, a meghívott játékos automatikusan fekete.</p>
     <p><strong>Új Lokális Játék:</strong> Egy gépen két játékos játszhat. A játék kezdetén a fehér lép, majd a fekete.</p>
-    <p><strong>Remote: Új Játék (Reset):</strong> Az adott remote sessionon belül újraindítja a játékot, megtartva a színeket.</p>
-    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása.</p>
+    <p><strong>Játék a gép ellen:</strong> Egyedül játszhatsz a szerveroldali gépi ellenfél ellen. Kiválaszthatod, hogy fehérrel vagy feketével indulsz, és a nehézséget is 1–10 között állíthatod.</p>
+    <p><strong>Új Játék / Reset:</strong> Az adott sessionon belül újraindítja a játékot.</p>
+    <p><strong>Visszavonás:</strong> Az utolsó lépés visszavonása. Gép elleni módban egy visszavonás a te és a gép utolsó lépéspárját is visszaveheti.</p>
     <p><strong>Feladás:</strong> Ha egy játékos feladja a játékot, a másik játékos nyert.</p>
     <p><strong>Utolsó lépés kijelölése:</strong> Az utolsó lépés forrás- és célmezője zölddel jelenik meg.</p>
+
     <h3>Sakk szabályok</h3>
     <p>A sakk szabályai...</p>
   </div>
-  
+
   <script src="script.js"></script>
 </body>
 </html>

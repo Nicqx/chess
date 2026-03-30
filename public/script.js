@@ -11,6 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const capturedOpponentElement = document.getElementById('captured-opponent');
   const boardWrapper = document.getElementById('board-wrapper');
 
+  const humanColorSelect = document.getElementById('human-color');
+  const aiDifficultySelect = document.getElementById('ai-difficulty');
+  const newVsComputerBtn = document.getElementById('new-vs-computer');
+
   let selectedSquare = null;
   let sessionId = null;
   let currentFen = null;
@@ -19,33 +23,97 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingMove = null;
   let playerColor = 'white';
   let isLocal = false;
+  let isVsAI = false;
+  let aiColor = null;
   let lastMove = null;
   let gameEndedShown = false;
+  let pollIntervalId = null;
 
-  // Frissíti a levett bábu megjelenítését
+  function detectBasePath() {
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    if (parts.length === 0) return '';
+
+    const last = parts[parts.length - 1];
+    const baseParts = /^\d{5}$/.test(last) ? parts.slice(0, -1) : parts;
+
+    return baseParts.length ? `/${baseParts.join('/')}` : '';
+  }
+
+  const basePath = detectBasePath();
+
+  function apiUrl(path) {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${window.location.origin}${basePath}${normalizedPath}`;
+  }
+
+  function buildSessionUrl(id) {
+    return `${window.location.origin}${basePath}/${id}`;
+  }
+
+  function setBoardOrientation() {
+    if (playerColor === 'black') {
+      boardElement.classList.add('flipped');
+      boardWrapper.classList.add('flipped-labels');
+    } else {
+      boardElement.classList.remove('flipped');
+      boardWrapper.classList.remove('flipped-labels');
+    }
+  }
+
+  function isHumanTurn() {
+    if (!currentFen) return true;
+    const turn = currentFen.split(' ')[1];
+    return (playerColor === 'white' && turn === 'w') || (playerColor === 'black' && turn === 'b');
+  }
+
+  function canControlPiece(pieceElement) {
+    if (!pieceElement) return false;
+    const pieceColor = getPieceColor(pieceElement);
+
+    if (isVsAI) {
+      return pieceColor === playerColor && isHumanTurn();
+    }
+
+    if (!isLocal) {
+      return pieceColor === playerColor;
+    }
+
+    return true;
+  }
+
   function updateCapturedPieces(fen) {
     const initialCounts = {
       white: { P: 8, R: 2, N: 2, B: 2, Q: 1 },
       black: { p: 8, r: 2, n: 2, b: 2, q: 1 }
     };
+
     const placement = fen.split(' ')[0];
-    const currentCounts = { white: { P: 0, R: 0, N: 0, B: 0, Q: 0 }, black: { p: 0, r: 0, n: 0, b: 0, q: 0 } };
-    for (let char of placement) {
+    const currentCounts = {
+      white: { P: 0, R: 0, N: 0, B: 0, Q: 0 },
+      black: { p: 0, r: 0, n: 0, b: 0, q: 0 }
+    };
+
+    for (const char of placement) {
       if (/[PRNBQ]/.test(char)) {
         currentCounts.white[char] = (currentCounts.white[char] || 0) + 1;
       } else if (/[prnbq]/.test(char)) {
         currentCounts.black[char] = (currentCounts.black[char] || 0) + 1;
       }
     }
+
     const capturedWhite = {};
     const capturedBlack = {};
-    for (let piece in initialCounts.white) {
+
+    for (const piece in initialCounts.white) {
       capturedWhite[piece] = initialCounts.white[piece] - (currentCounts.white[piece] || 0);
     }
-    for (let piece in initialCounts.black) {
+    for (const piece in initialCounts.black) {
       capturedBlack[piece] = initialCounts.black[piece] - (currentCounts.black[piece] || 0);
     }
-    let myCaptured, opponentCaptured;
+
+    let myCaptured;
+    let opponentCaptured;
+
     if (playerColor === 'white') {
       myCaptured = capturedBlack;
       opponentCaptured = capturedWhite;
@@ -53,9 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
       myCaptured = capturedWhite;
       opponentCaptured = capturedBlack;
     }
+
     function renderCaptured(targetElement, capturedObj) {
       targetElement.innerHTML = '';
-      for (let piece in capturedObj) {
+      for (const piece in capturedObj) {
         const count = capturedObj[piece];
         for (let i = 0; i < count; i++) {
           const img = document.createElement('img');
@@ -67,59 +136,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
+
     renderCaptured(capturedSelfElement, myCaptured);
     renderCaptured(capturedOpponentElement, opponentCaptured);
   }
 
-  // Megjeleníti a state modalt
-  function showStateModal(message, header = "Game Status") {
+  function showStateModal(message, header = 'Game Status') {
     stateModalHeader.innerText = header;
     stateModalMessage.innerText = message;
     stateModal.style.display = 'block';
   }
 
-  // Elrejti a state modalt
   function hideStateModal() {
     stateModal.style.display = 'none';
   }
 
-  // updateStatus: ha a státusz nem ongoing, modal jelenik meg (csak egyszer a flag miatt)
   function updateStatus(data) {
+    if (!currentFen) return;
+
     if (data.status && data.status !== 'ongoing') {
-      let statusText = "";
+      let statusText = '';
+
       if (data.status === 'checkmate') {
         const currentTurn = currentFen.split(' ')[1];
         statusText = currentTurn === 'w' ? 'Black wins by checkmate' : 'White wins by checkmate';
         if (!gameEndedShown) {
-          showStateModal(statusText, "Checkmate");
+          showStateModal(statusText, 'Checkmate');
           gameEndedShown = true;
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'stalemate') {
-        statusText = "Draw (stalemate)";
+        statusText = 'Draw (stalemate)';
         if (!gameEndedShown) {
-          showStateModal(statusText, "Stalemate");
+          showStateModal(statusText, 'Stalemate');
           gameEndedShown = true;
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'draw') {
-        statusText = "Draw";
+        statusText = 'Draw';
         if (!gameEndedShown) {
-          showStateModal(statusText, "Draw");
+          showStateModal(statusText, 'Draw');
           gameEndedShown = true;
         }
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       } else if (data.status === 'check') {
-        statusText = "Check!";
-        if (!gameEndedShown) {
-          showStateModal(statusText, "Check");
-          gameEndedShown = true;
-        }
+        statusText = 'Check!';
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | ${statusText}`;
       } else {
         statusText = data.status;
         statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${statusText}`;
       }
+    } else if (data.ended && data.winner) {
+      const winnerText = data.winner === 'w' ? 'White' : 'Black';
+      statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Game ended: ${winnerText} wins`;
     } else {
       const turn = currentFen.split(' ')[1];
       statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ${turn === 'w' ? 'White' : 'Black'}`;
@@ -130,41 +199,82 @@ document.addEventListener('DOMContentLoaded', () => {
     hideStateModal();
   });
 
-  // Ha a remote session esetén a játékos fekete, akkor a board-wrapper kapja a "flipped-labels" osztályt
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  if (pathParts.length === 1) {
-    sessionId = pathParts[0];
-    const storageKey = `chess_game_${sessionId}_color`;
-    const storedColor = localStorage.getItem(storageKey);
-    if (storedColor) {
-      playerColor = storedColor;
-    } else {
-      playerColor = 'black';
-      localStorage.setItem(storageKey, 'black');
+  async function bootstrapSessionFromUrl() {
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    if (pathParts.length === 0) return;
+
+    const maybeSessionId = pathParts[pathParts.length - 1];
+    if (!/^\d{5}$/.test(maybeSessionId)) return;
+
+    sessionId = maybeSessionId;
+
+    try {
+      const [configRes, stateRes] = await Promise.all([
+        fetch(apiUrl(`/session/${sessionId}/config`)),
+        fetch(apiUrl(`/session/${sessionId}`))
+      ]);
+
+      const config = await configRes.json();
+      const data = await stateRes.json();
+
+      if (config.mode === 'ai') {
+        isLocal = true;
+        isVsAI = true;
+        playerColor = config.humanColor === 'w' ? 'white' : 'black';
+        aiColor = config.aiColor === 'w' ? 'white' : 'black';
+      } else {
+        const storageKey = `chess_game_${sessionId}_color`;
+        const storedColor = localStorage.getItem(storageKey);
+
+        if (storedColor) {
+          playerColor = storedColor;
+        } else {
+          playerColor = 'black';
+          localStorage.setItem(storageKey, 'black');
+        }
+
+        isLocal = false;
+        isVsAI = false;
+        aiColor = null;
+      }
+
+      setBoardOrientation();
+
+      currentFen = data.fen;
+      loadGame(currentFen);
+      updateCapturedPieces(currentFen);
+
+      if (data.lastMove) {
+        lastMove = data.lastMove;
+        highlightLastMove(lastMove);
+      }
+
+      updateStatus(data);
+
+      if (!pollIntervalId) {
+        pollIntervalId = setInterval(pollGame, 2000);
+      }
+    } catch (err) {
+      console.error(err);
     }
-    if (playerColor === 'black') {
-      boardElement.classList.add('flipped');
-      boardWrapper.classList.add('flipped-labels');
-    } else {
-      boardElement.classList.remove('flipped');
-      boardWrapper.classList.remove('flipped-labels');
-    }
-    fetchSessionState();
-    setInterval(pollGame, 3000);
   }
 
   document.getElementById('new-game').addEventListener('click', () => {
-    fetch(`${window.location.origin}/new-session`, { method: 'POST' })
+    fetch(apiUrl('/new-session'), { method: 'POST' })
       .then(response => response.json())
       .then(data => {
         sessionId = data.sessionId;
         currentFen = data.fen;
         isLocal = true;
+        isVsAI = false;
+        aiColor = null;
         playerColor = 'white';
+
         localStorage.setItem(`chess_game_${sessionId}_color`, 'white');
-        boardElement.classList.remove('flipped');
-        boardWrapper.classList.remove('flipped-labels');
+
+        setBoardOrientation();
         gameEndedShown = false;
+
         loadGame(currentFen);
         updateCapturedPieces(currentFen);
         statusElement.innerText = `Session: ${sessionId} (${playerColor})`;
@@ -172,32 +282,55 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(console.error);
   });
 
-  // Remote New Session button – ugyanaz
   document.getElementById('new-session').addEventListener('click', () => {
-    fetch(`${window.location.origin}/new-session`, { method: 'POST' })
+    fetch(apiUrl('/new-session'), { method: 'POST' })
       .then(response => response.json())
       .then(data => {
         localStorage.setItem(`chess_game_${data.sessionId}_color`, 'white');
-        window.location.href = `/${data.sessionId}`;
+        window.location.href = buildSessionUrl(data.sessionId);
+      })
+      .catch(console.error);
+  });
+
+  newVsComputerBtn.addEventListener('click', () => {
+    const humanColor = humanColorSelect.value;
+    const difficulty = Number(aiDifficultySelect.value);
+
+    fetch(apiUrl('/new-machine-session'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ humanColor, difficulty })
+    })
+      .then(res => res.json())
+      .then(data => {
+        localStorage.setItem(
+          `chess_game_${data.sessionId}_color`,
+          humanColor === 'w' ? 'white' : 'black'
+        );
+        window.location.href = buildSessionUrl(data.sessionId);
       })
       .catch(console.error);
   });
 
   function fetchSessionState() {
     if (!sessionId) return;
-    fetch(`${window.location.origin}/session/${sessionId}`)
+
+    fetch(apiUrl(`/session/${sessionId}`))
       .then(res => res.json())
       .then(data => {
         if (data.fen !== currentFen) {
           gameEndedShown = false;
         }
+
         currentFen = data.fen;
         loadGame(currentFen);
         updateCapturedPieces(currentFen);
+
         if (data.lastMove) {
           lastMove = data.lastMove;
           highlightLastMove(lastMove);
         }
+
         updateStatus(data);
       })
       .catch(console.error);
@@ -205,7 +338,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function pollGame() {
     if (!sessionId) return;
-    fetch(`${window.location.origin}/session/${sessionId}`)
+
+    fetch(apiUrl(`/session/${sessionId}`))
       .then(res => res.json())
       .then(data => {
         if (data.fen !== currentFen) {
@@ -213,11 +347,13 @@ document.addEventListener('DOMContentLoaded', () => {
           currentFen = data.fen;
           loadGame(currentFen);
           updateCapturedPieces(currentFen);
+
           if (data.lastMove) {
             lastMove = data.lastMove;
             highlightLastMove(lastMove);
           }
         }
+
         updateStatus(data);
       })
       .catch(console.error);
@@ -226,8 +362,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function createBoard() {
     boardElement.innerHTML = '';
     board = [];
+
     for (let row = 0; row < 8; row++) {
-      let rowArray = [];
+      const rowArray = [];
       for (let col = 0; col < 8; col++) {
         const square = document.createElement('div');
         square.classList.add('square');
@@ -246,7 +383,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const parts = fen.split(' ');
     const position = parts[0];
     const rows = position.split('/');
+
     createBoard();
+
     for (let r = 0; r < 8; r++) {
       let col = 0;
       for (const char of rows[r]) {
@@ -265,13 +404,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function clearHighlights() {
-    board.forEach(row => row.forEach(square => square.classList.remove('highlight')));
+    board.forEach(row => row.forEach(square => {
+      square.classList.remove('highlight');
+    }));
   }
 
-  function highlightLegalMoves(fromSquare, moves) {
+  function highlightLegalMoves(moves) {
     moves.forEach(move => {
       const target = getSquareElementFromAlgebraic(move.to);
-      target.classList.add('highlight');
+      if (target) {
+        target.classList.add('highlight');
+      }
     });
   }
 
@@ -298,8 +441,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function highlightLastMove(move) {
     board.forEach(row => row.forEach(square => square.classList.remove('last-move')));
+
     const fromSquare = getSquareElementFromAlgebraic(move.from);
     const toSquare = getSquareElementFromAlgebraic(move.to);
+
     if (fromSquare) fromSquare.classList.add('last-move');
     if (toSquare) toSquare.classList.add('last-move');
   }
@@ -308,116 +453,125 @@ document.addEventListener('DOMContentLoaded', () => {
     const clickedSquare = board[row][col];
     if (promotionModal.style.display === 'block') return;
 
-    if (!isLocal && currentFen) {
-      const turn = currentFen.split(' ')[1];
-      if ((playerColor === 'white' && turn !== 'w') || (playerColor === 'black' && turn !== 'b')) {
-        alert("Not your turn!");
-        return;
-      }
+    if (currentFen && (isVsAI || !isLocal) && !isHumanTurn()) {
+      alert('Not your turn!');
+      return;
     }
 
     const toCoord = getAlgebraic(row, col);
 
     if (selectedSquare) {
       const moveCandidate = legalMoves.find(m => m.to === toCoord);
+
       if (moveCandidate) {
         pendingMove = { from: moveCandidate.from, to: moveCandidate.to };
+
         const pieceImg = selectedSquare.querySelector('img.piece');
         if (pieceImg) {
           const src = pieceImg.src;
           const isPawn = src.includes('P.png') || src.includes('p.png');
-          const destRank = parseInt(toCoord[1]);
+          const destRank = parseInt(toCoord[1], 10);
+
           if (isPawn && ((src.includes('P.png') && destRank === 8) || (src.includes('p.png') && destRank === 1))) {
             showPromotionModal();
             return;
           }
         }
+
         sendMove(pendingMove.from, pendingMove.to);
         return;
-      } else if (clickedSquare.querySelector('img.piece')) {
+      }
+
+      if (clickedSquare.querySelector('img.piece')) {
         const piece = clickedSquare.querySelector('img.piece');
-        if (!isLocal && getPieceColor(piece) !== playerColor) {
-          alert("This is not your piece!");
+
+        if (!canControlPiece(piece)) {
+          alert('Ezzel a bábuval most nem léphetsz.');
           return;
         }
+
         clearHighlights();
         selectedSquare = clickedSquare;
         clickedSquare.classList.add('highlight');
+
         const from = getAlgebraic(row, col);
         if (sessionId) {
-          fetch(`${window.location.origin}/session/${sessionId}/legal-moves?from=${from}`)
+          fetch(apiUrl(`/session/${sessionId}/legal-moves?from=${from}`))
             .then(res => res.json())
             .then(data => {
               legalMoves = data.moves;
-              highlightLegalMoves(clickedSquare, legalMoves);
+              highlightLegalMoves(legalMoves);
             })
             .catch(console.error);
         }
         return;
-      } else {
-        alert('Invalid move!');
-        return;
       }
+
+      alert('Invalid move!');
+      return;
     }
+
     if (!selectedSquare) {
       if (clickedSquare.querySelector('img.piece')) {
         const piece = clickedSquare.querySelector('img.piece');
-        if (!isLocal && getPieceColor(piece) !== playerColor) {
-          alert("This is not your piece!");
+
+        if (!canControlPiece(piece)) {
+          alert('Ezzel a bábuval most nem léphetsz.');
           return;
         }
+
         selectedSquare = clickedSquare;
         clickedSquare.classList.add('highlight');
+
         const from = getAlgebraic(row, col);
         if (sessionId) {
-          fetch(`${window.location.origin}/session/${sessionId}/legal-moves?from=${from}`)
+          fetch(apiUrl(`/session/${sessionId}/legal-moves?from=${from}`))
             .then(res => res.json())
             .then(data => {
               legalMoves = data.moves;
-              highlightLegalMoves(clickedSquare, legalMoves);
+              highlightLegalMoves(legalMoves);
             })
             .catch(console.error);
         }
       }
-      return;
     }
   }
 
   function sendMove(from, to, promotion = null) {
     const payload = { from, to };
     if (promotion) payload.promotion = promotion;
-    const url = `${window.location.origin}/session/${sessionId}/move`;
-    console.log("Sending move:", payload, "to", url);
-    fetch(url, {
+
+    fetch(apiUrl(`/session/${sessionId}/move`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
       .then(res => res.json())
       .then(data => {
-        console.log("Move response:", data);
         if (data.error) {
           alert(data.error);
         } else {
           currentFen = data.fen;
-          lastMove = data.move;
+          lastMove = data.aiMove || data.move;
+
           loadGame(currentFen);
-          highlightLastMove(lastMove);
-          gameEndedShown = false;
-          if (data.status && data.status !== 'ongoing') {
-            updateStatus({ status: data.status });
-          } else {
-            fetchSessionState();
+
+          if (lastMove) {
+            highlightLastMove(lastMove);
           }
+
+          gameEndedShown = false;
           updateCapturedPieces(currentFen);
+          updateStatus(data);
         }
+
         clearHighlights();
         selectedSquare = null;
         legalMoves = [];
         pendingMove = null;
       })
       .catch(err => {
-        console.error("Error sending move:", err);
+        console.error('Error sending move:', err);
       });
   }
 
@@ -446,7 +600,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('undo').addEventListener('click', () => {
     if (!sessionId) return;
-    fetch(`${window.location.origin}/session/${sessionId}/undo`, { method: 'POST' })
+
+    fetch(apiUrl(`/session/${sessionId}/undo`), { method: 'POST' })
       .then(res => res.json())
       .then(data => {
         if (data.error) {
@@ -455,7 +610,12 @@ document.addEventListener('DOMContentLoaded', () => {
           currentFen = data.fen;
           loadGame(currentFen);
           updateCapturedPieces(currentFen);
-          statusElement.innerText = `Session: ${sessionId} (${playerColor}) | Next: ongoing`;
+          clearHighlights();
+          selectedSquare = null;
+          legalMoves = [];
+          pendingMove = null;
+          gameEndedShown = false;
+          updateStatus(data);
         }
       })
       .catch(console.error);
@@ -463,8 +623,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('resign').addEventListener('click', () => {
     if (!sessionId) return;
-    const resignColor = playerColor === 'white' ? 'w' : 'b';
-    fetch(`${window.location.origin}/session/${sessionId}/resign`, {
+
+    let resignColor = 'w';
+
+    if (isVsAI) {
+      resignColor = playerColor === 'white' ? 'w' : 'b';
+    } else if (isLocal) {
+      resignColor = currentFen && currentFen.split(' ')[1] ? currentFen.split(' ')[1] : 'w';
+    } else {
+      resignColor = playerColor === 'white' ? 'w' : 'b';
+    }
+
+    fetch(apiUrl(`/session/${sessionId}/resign`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ color: resignColor })
@@ -477,22 +647,30 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(console.error);
   });
 
-  document.getElementById('remote-newgame')?.addEventListener('click', () => {
+  document.getElementById('remote-newgame').addEventListener('click', () => {
     if (!sessionId) return;
-    fetch(`${window.location.origin}/session/${sessionId}/newgame`, { method: 'POST' })
+
+    fetch(apiUrl(`/session/${sessionId}/newgame`), { method: 'POST' })
       .then(res => res.json())
       .then(data => {
         currentFen = data.fen;
         loadGame(currentFen);
         updateCapturedPieces(currentFen);
+
         if (data.lastMove) {
           lastMove = data.lastMove;
           highlightLastMove(lastMove);
+        } else if (data.aiMove) {
+          lastMove = data.aiMove;
+          highlightLastMove(lastMove);
         }
-        fetchSessionState();
+
+        gameEndedShown = false;
+        updateStatus(data);
       })
       .catch(console.error);
   });
 
   createBoard();
+  bootstrapSessionFromUrl();
 });
