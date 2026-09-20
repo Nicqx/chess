@@ -36,6 +36,10 @@ redisClient.connect().catch((err) => {
 
 app.use(express.json());
 
+app.get('/livez', (req, res) => {
+  res.json({ ok: true });
+});
+
 function httpError(statusCode, message) {
   const err = new Error(message);
   err.statusCode = statusCode;

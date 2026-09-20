@@ -11,6 +11,9 @@ RUN apt-get update \
 
 COPY . .
 
+RUN chown -R node:node /app
+USER 1000:1000
+
 EXPOSE 8099
 
 CMD ["node", "index.js"]
